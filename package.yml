@@ -1,0 +1,7 @@
+name: Template
+author: tbela99
+category: Utilities
+tags: [template, engine, string]
+current: 1.0
+sources:
+  - "Source/Template.js"
