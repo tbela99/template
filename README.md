@@ -8,71 +8,71 @@ How to use
 
 Substitution is driven by tags that defined which action will be taken and whether the context should be switched. there are some predefined tags:
 
-# Template Tag: IF  {#Tag:if}
+## Template Tag: IF  {#Tag:if}
 
 this tag switch the replacement context in the match1 if the property is evaluated to an object/array.
 
-## Syntax:
+### Syntax:
 
  {if:property} match1 [{else:property} match2]{/if:property}
 
-## Rules
+### Rules
 
 - if the property does not exists or is evaluated to a falsy value (undefined, null, an empty string, an empty array or zero) the match2 is used in the current context if defined.
 - if the property exists in the currrent context then match1 is used. if the property is evaluated to an object/array, the result is substituted in match1, else match1 will be used in the current context.
 
 
-# Template Tag: DEFINED {#Tag:defined}
+## Template Tag: DEFINED {#Tag:defined}
 
 this tag does not switch the context.
 
-## Syntax:
+### Syntax:
 
 	{defined:property} match1 [{else:property} match2]{/defined:property}
 
-## Rules
+### Rules
 
 - if the property exists and is not undefined or null then match1 is used in the current context, else match2 is used in the current context
 
 Syntax: {if:property} match1 [{else:property} match2]{/if:property}
 
-# Template Tag: NOT-EMPTY {#Tag:not-empty}
+## Template Tag: NOT-EMPTY {#Tag:not-empty}
 
 this tag does not switch the context.
 
-## Syntax: 
+### Syntax: 
 
 	{not-empty:property} match1 [{else:property} match2]{/not-empty:property}
 
-## Rules
+### Rules
 
 - if the property exists and is evaluated to a not a falsy value then match1 is used in the current context, else match2 is used in the current context
 
-# Template Tag: EMPTY {#Tag:empty}
+## Template Tag: EMPTY {#Tag:empty}
 
 this tag does not switch the context.
 
-## Syntax: 
+### Syntax: 
 
 	{empty:property} match1 [{else:property} match2]{/empty:property}
 
-## Rules
+### Rules
 
 - if the property does not exists or is evaluated to a falsy value then match1 is used in the current context, else match2 is used in the current context
 
-# Template Tag: REPEAT {#Tag:repeat}
+## Template Tag: REPEAT {#Tag:repeat}
 
 this tag switch the context
 
-## Syntax: 
+### Syntax: 
 	
 	{repeat:property} match1{/repeat:property}
 
-## Rules
+### Rules
 
 - if the property is evaluated to a an array/object then every elements will be susbstituted to match1. if the result of the evaluation is an object and that object contains a property 'each' which is a function, this property will be used to iterate over the object properties. if match1 contains '{.}' then '{.}' will be replaced by the current property value.
 
-# Template Tag: LOOP {#Tag:loop}
+## Template Tag: LOOP {#Tag:loop}
 
 this tag switch the context. this tag works exactly like the *loop* tag, but iteration is done over the current context.
 
