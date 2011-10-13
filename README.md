@@ -74,7 +74,7 @@ this tag switch the context
 
 ## Template Tag: LOOP {#Tag:loop}
 
-this tag switch the context. this tag works exactly like the *loop* tag, but iteration is done over the current context.
+this tag switch the context. this tag works exactly like the *repeat* tag, but iteration is done over the current context.
 
 Syntax: {loop:} match1{/loop:}
 
