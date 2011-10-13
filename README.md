@@ -106,7 +106,7 @@ Syntax: {loop:} match1{/loop:}
 				{country: 'Argentina', players: [{position: 'middfield', number: 10, name: 'Diego'}, {position: 'attacker', number: 8, name: 'Samuel', substitute: true}, {position: 'goolkeeper', number: 1, name: 'Stone'}]}
 			];
 
-	new Template().substitute('{loop:}' + template + '{/loop:}', data) // -> <h1>Cameroon</h1><ul><li>Player #1: The Wall, goalkeeper</li><li>Player #9: Speedy, attacker</li><li>Player #25: Charly, middfield. substitute</li></ul></div><div><h1>Argentina</h1><ul><li>Player #10: Diego, middfield</li><li>Player #8: Samuel, attacker. substitute</li><li>Player #1: Stone, goolkeeper</li></ul></div>
+	new Template().substitute('{loop:}' + template + '{/loop:}', data) // -> <div><h1>Cameroon</h1><ul><li>Player #1: The Wall, goalkeeper</li><li>Player #9: Speedy, attacker</li><li>Player #25: Charly, middfield. substitute</li></ul></div><div><h1>Argentina</h1><ul><li>Player #10: Diego, middfield</li><li>Player #8: Samuel, attacker. substitute</li><li>Player #1: Stone, goolkeeper</li></ul></div>
 
 # Template Class {#template:constructor}
 
