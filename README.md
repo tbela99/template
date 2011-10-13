@@ -18,8 +18,8 @@ this tag switch the replacement context in the match1 if the property is evaluat
 
 ## Rules
 
-1- if the property does not exists or is evaluated to a falsy value (undefined, null, an empty string, an empty array or zero) the match2 is used in the current context if defined.
-2- if the property exists in the currrent context then match1 is used. if the property is evaluated to an object/array, the result is substituted in match1, else match1 will be used in the current context.
+- if the property does not exists or is evaluated to a falsy value (undefined, null, an empty string, an empty array or zero) the match2 is used in the current context if defined.
+- if the property exists in the currrent context then match1 is used. if the property is evaluated to an object/array, the result is substituted in match1, else match1 will be used in the current context.
 
 
 # DEFINED {#Tag:defined}
@@ -32,7 +32,7 @@ this tag does not switch the context.
 
 ## Rules
 
-1- if the property exists and is not undefined or null then match1 is used in the current context, else match2 is used in the current context
+- if the property exists and is not undefined or null then match1 is used in the current context, else match2 is used in the current context
 
 Syntax: {if:property} match1 [{else:property} match2]{/if:property}
 
@@ -46,7 +46,7 @@ this tag does not switch the context.
 
 ## Rules
 
-1- if the property exists and is evaluated to a not a falsy value then match1 is used in the current context, else match2 is used in the current context
+- if the property exists and is evaluated to a not a falsy value then match1 is used in the current context, else match2 is used in the current context
 
 # EMPTY {#Tag:empty}
 
@@ -58,7 +58,7 @@ this tag does not switch the context.
 
 ## Rules
 
-1- if the property does not exists or is evaluated to a falsy value then match1 is used in the current context, else match2 is used in the current context
+- if the property does not exists or is evaluated to a falsy value then match1 is used in the current context, else match2 is used in the current context
 
 # REPEAT {#Tag:repeat}
 
@@ -70,7 +70,7 @@ this tag switch the context
 
 ## Rules
 
-1- if the property is evaluated to a an array/object then every elements will be susbstituted to match1. if the result of the evaluation is an object and that object contains a property 'each' which is a function, this property will be used to iterate over the object properties. if match1 contains '{.}' then '{.}' will be replaced by the current property value.
+- if the property is evaluated to a an array/object then every elements will be susbstituted to match1. if the result of the evaluation is an object and that object contains a property 'each' which is a function, this property will be used to iterate over the object properties. if match1 contains '{.}' then '{.}' will be replaced by the current property value.
 
 # LOOP {#Tag:loop}
 
@@ -129,15 +129,15 @@ Syntax: {loop:} match1{/loop:}
 
 ##### Options:parse Arguments
 
-1- tag - (*string*) tag name
-2- matches - (*array*) matches
-3- name - (*string*) property name
-4- data - (*mixed*) current context
-5- string - (*string*) current context string
-6- regExp - (*regexp*) 
-7- replace - (*regexp*)
-8- simplereg - (*regexp*)
-9- options - (*options*) this instance options
+- tag - (*string*) tag name
+- matches - (*array*) matches
+- name - (*string*) property name
+- data - (*mixed*) current context
+- string - (*string*) current context string
+- regExp - (*regexp*) 
+- replace - (*regexp*)
+- simplereg - (*regexp*)
+- options - (*options*) this instance options
 
 
 Template Method: substitute 
