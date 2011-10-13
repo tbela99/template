@@ -8,7 +8,7 @@ How to use
 
 Substitution is driven by tags that defined which action will be taken and whether the context should be switched. there are some predefined tags:
 
-# IF  {#Tag:if}
+# Template Tag: IF  {#Tag:if}
 
 this tag switch the replacement context in the match1 if the property is evaluated to an object/array.
 
@@ -22,7 +22,7 @@ this tag switch the replacement context in the match1 if the property is evaluat
 - if the property exists in the currrent context then match1 is used. if the property is evaluated to an object/array, the result is substituted in match1, else match1 will be used in the current context.
 
 
-# DEFINED {#Tag:defined}
+# Template Tag: DEFINED {#Tag:defined}
 
 this tag does not switch the context.
 
@@ -36,7 +36,7 @@ this tag does not switch the context.
 
 Syntax: {if:property} match1 [{else:property} match2]{/if:property}
 
-# NOT-EMPTY {#Tag:not-empty}
+# Template Tag: NOT-EMPTY {#Tag:not-empty}
 
 this tag does not switch the context.
 
@@ -48,7 +48,7 @@ this tag does not switch the context.
 
 - if the property exists and is evaluated to a not a falsy value then match1 is used in the current context, else match2 is used in the current context
 
-# EMPTY {#Tag:empty}
+# Template Tag: EMPTY {#Tag:empty}
 
 this tag does not switch the context.
 
@@ -60,7 +60,7 @@ this tag does not switch the context.
 
 - if the property does not exists or is evaluated to a falsy value then match1 is used in the current context, else match2 is used in the current context
 
-# REPEAT {#Tag:repeat}
+# Template Tag: REPEAT {#Tag:repeat}
 
 this tag switch the context
 
@@ -72,33 +72,33 @@ this tag switch the context
 
 - if the property is evaluated to a an array/object then every elements will be susbstituted to match1. if the result of the evaluation is an object and that object contains a property 'each' which is a function, this property will be used to iterate over the object properties. if match1 contains '{.}' then '{.}' will be replaced by the current property value.
 
-# LOOP {#Tag:loop}
+# Template Tag: LOOP {#Tag:loop}
 
 this tag switch the context. this tag works exactly like the *loop* tag, but iteration is done over the current context.
 
 Syntax: {loop:} match1{/loop:}
 
-# Example 1 {#Tag:example-1}
+## Example 1 {#Tag:example-1}
 
 	var template = 'Hi, my name is {name}';
 
 	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
 
-# Example 2 {#Tag:example-2}
+## Example 2 {#Tag:example-2}
 
 	var template = 'Hi, my name is {name}{if:age}, I am {age}{/if:age}';
 
 	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
 	new Template().substitute(template, {name: 'Bob', age: function () { return 11 }}) // -> Hi, my name is Bob, I am 11
 
-# Example 3 {#Tag:example-3}
+## Example 3 {#Tag:example-3}
 
 	var template = 'Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>{if:kids}';
 
 	new Template().substitute(template, {name: 'Martina'}) // -> Hi, my name is Martina.
 	new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']}) // -> Hi, my name is Martina. Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
 
-# Example 4 {#Tag:example-4}
+## Example 4 {#Tag:example-4}
 
 	var template = '<div><h1>{country}</h1>{defined:players}<ul>{repeat:players}<li>Player #{number}: {name}, {position}{not-empty:substitute}. substitute{/not-empty:substitute}</li>{/repeat:players}{/defined:players}</div>',
 	data = [
