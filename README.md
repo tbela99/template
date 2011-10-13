@@ -149,7 +149,7 @@ substitute the given object into the given string template.
 
 	var template = new Template();
 	
-	var ouput = template.substitute(string, data[, options]);
+	var output = template.substitute(string, data[, options]);
 
 ### Returns:
 
