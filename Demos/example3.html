@@ -1,0 +1,17 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<script type="text/javascript" src="../mootools.js"></script>
+<script type="text/javascript" src="../Source/Template.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+
+	var template = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>.{/if:kids}';
+	
+	document.body.appendText(new Template().substitute(template, {name: 'Martina'})); // -> Hi, my name is Martina
+	document.body.appendText(new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']})) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	
+</script>
+</body></html>

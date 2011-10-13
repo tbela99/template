@@ -29,7 +29,7 @@ provides: [Template]
 			multiline: false,
 			placeholder: '\u21b5',
 			//handle unknown tag
-			onParse: function (tag, name, data, matches, string, regExp, replace, simplereg, options) {
+			parse: function (tag, matches /*, name, data, string, regExp, replace, simplereg, options */) {
 			
 				if(options.debug) log('unknown tag: ' + tag, matches);
 				
@@ -43,13 +43,13 @@ provides: [Template]
 		
 		initialize: function (options) { 
 		
-			this.options = Object.merge(this.options, options) 
+			this.options = Object.append(this.options, options) 
 		},
 		
 		substitute: function (string, data, options) {
 		
 			//console.log(string)
-			options = Object.merge({}, this.options, options);
+			options = Object.append({}, this.options, options);
 			
 			var replace ={begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
 				regExp = new RegExp(this.regExp.substitute(replace), 'i'),
@@ -82,7 +82,7 @@ provides: [Template]
 						case 'not-empty':
 
 								//switch context for object or array
-								subject = this.map(data, name);
+								subject = this.evaluate(data, name);
 								
 								test = this.test(tag, subject);
 								
@@ -108,28 +108,38 @@ provides: [Template]
 						case 'repeat':
 						case 'loop':
 							
-							subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : this.map(data, name);
+							subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : this.evaluate(data, name);
 							
 							if(!this.test(tag, subject)) return this.parse(string.replace(matches[0], ''), data, regExp, replace, simplereg, options);
 
-							var value, property;
+							var value, property, single = new RegExp(replace.begin + '\.' + replace.end, 'g');
 							
-							for(property in subject) if(subject.hasOwnProperty(property)) {
+							//iterable - Array or Hash like
+							if(typeof subject.each == 'function')  subject.each(function (value) {
 							
-								value = this.map(subject, property);
+								if(typeof value == 'function') value = value();
+								
+								if(value == undefined) return;
+								
+								html += typeof value != 'object' ? matches[3].replace(single, value) : this.parse(matches[3], value, regExp, replace,  simplereg, options)
+							}, this);
+							
+							else for(property in subject) if(subject.hasOwnProperty(property)) {
+							
+								value = this.evaluate(subject, property);
 								
 								if(value == undefined) continue;
 								
 								//hopefully matches[3] should be a simple token. replace {.} by the property value
-								html += typeof value != 'object' ? matches[3].replace(new RegExp(replace.begin + '\.' + replace.end, 'g'), value) : this.parse(matches[3], value, regExp, replace,  simplereg, options)
+								html += typeof value != 'object' ? matches[3].replace(single, value) : this.parse(matches[3], value, regExp, replace,  simplereg, options)
 							}
 							
 							return this.parse(string.replace(matches[0], html), data, regExp, replace, simplereg, options);
 							
 						default: 
 
-							//custom tag
-							if(options.onParse) return this.parse(string.replace(matches[0], options.onParse(tag, name, data, matches, string, regExp, replace, simplereg, options) || ''), data, regExp, replace, simplereg, options);
+							//custom tag parsing
+							if(options.parse) return this.parse(string.replace(matches[0], options.onParse(tag, matches, name, data, string, regExp, replace, simplereg, options) || ''), data, regExp, replace, simplereg, options);
 					}
 				}
 			}
@@ -140,7 +150,7 @@ provides: [Template]
 				
 				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the ' + (match.charAt(1) == '/' ? 'opening' : 'closing') + ' token missing ?', string);
 				
-				var value = this.map(data, name);
+				var value = this.evaluate(data, name);
 				
 				return value == undefined ? '' : value
 				
@@ -168,7 +178,7 @@ provides: [Template]
 			return true
 		},
 		
-		map: function (object, property) {
+		evaluate: function (object, property) {
 		
 			if(object == undefined) return undefined;
 			
