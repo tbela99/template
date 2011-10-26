@@ -61,7 +61,7 @@ provides: [Template]
 			return this.parse(string, data, regExp, replace, simplereg, options)
 		},
 		
-		html: function (string, data, options) { return Elements.from(this.substitute(string, data, options)) },
+		html: function () { return Elements.from(this.substitute.apply(this, arguments)) },
 		
 		parse: function (string, data, regExp, replace, simplereg, options) {
 		
