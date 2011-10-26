@@ -8,6 +8,52 @@ How to use
 
 Substitution is driven by tags that defined which action will be taken and whether the context should be switched. there are some predefined tags:
 
+## Example 1 {#Tag:example-1}
+
+	var template = 'Hi, my name is {name}';
+
+	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
+
+## Example 2 {#Tag:example-2}
+
+	var template = 'Hi, my name is {name}{if:age}, I am {age}{/if:age}';
+
+	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
+	new Template().substitute(template, {name: 'Bob', age: function () { return 11 }}) // -> Hi, my name is Bob, I am 11
+
+## Example 3 {#Tag:example-3}
+
+	var template = 'Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>{/if:kids}';
+
+	new Template().substitute(template, {name: 'Martina'}) // -> Hi, my name is Martina.
+	new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']}) // -> Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+
+## Example 4 {#Tag:example-4}
+
+	var template = '<div><h1>{country}</h1>{defined:players}<ul>{repeat:players}<li>Player #{number}: {name}, {position}{not-empty:substitute}. substitute{/not-empty:substitute}</li>{/repeat:players}{/defined:players}</div>',
+		data = [
+				{
+					country: 'Cameroon', 
+					players: [
+					
+						{position: 'goalkeeper', number: 1, name: 'The Wall'},
+						{position: 'attacker', number: 9, name: 'Speedy'}, 
+						{position: 'middfield', number: 25, name: 'Charly', substitute: true}
+					]
+				}, 
+				{
+					country: 'Argentina', 
+					players: [
+					
+						{position: 'middfield', number: 10, name: 'Diego'}, 
+						{position: 'attacker', number: 8, name: 'Samuel', substitute: true}, 
+						{position: 'goolkeeper', number: 1, name: 'Stone'}
+					]
+				}
+			];
+
+	new Template().substitute('{loop:}' + template + '{/loop:}', data) // -> <div><h1>Cameroon</h1><ul><li>Player #1: The Wall, goalkeeper</li><li>Player #9: Speedy, attacker</li><li>Player #25: Charly, middfield. substitute</li></ul></div><div><h1>Argentina</h1><ul><li>Player #10: Diego, middfield</li><li>Player #8: Samuel, attacker. substitute</li><li>Player #1: Stone, goolkeeper</li></ul></div>
+
 ## Template Tag: IF  {#Tag:if}
 
 this tag switch the replacement context in the match1 if the property is evaluated to an object/array.
@@ -77,36 +123,6 @@ this tag switch the context
 this tag switch the context. this tag works exactly like the *repeat* tag, but iteration is done over the current context.
 
 Syntax: {loop:} match1{/loop:}
-
-## Example 1 {#Tag:example-1}
-
-	var template = 'Hi, my name is {name}';
-
-	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
-
-## Example 2 {#Tag:example-2}
-
-	var template = 'Hi, my name is {name}{if:age}, I am {age}{/if:age}';
-
-	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
-	new Template().substitute(template, {name: 'Bob', age: function () { return 11 }}) // -> Hi, my name is Bob, I am 11
-
-## Example 3 {#Tag:example-3}
-
-	var template = 'Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>{if:kids}';
-
-	new Template().substitute(template, {name: 'Martina'}) // -> Hi, my name is Martina.
-	new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']}) // -> Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
-
-## Example 4 {#Tag:example-4}
-
-	var template = '<div><h1>{country}</h1>{defined:players}<ul>{repeat:players}<li>Player #{number}: {name}, {position}{not-empty:substitute}. substitute{/not-empty:substitute}</li>{/repeat:players}{/defined:players}</div>',
-	data = [
-				{country: 'Cameroon', players: [{position: 'goalkeeper', number: 1, name: 'The Wall'}, {position: 'attacker', number: 9, name: 'Speedy'}, {position: 'middfield', number: 25, name: 'Charly', substitute: true}]}, 
-				{country: 'Argentina', players: [{position: 'middfield', number: 10, name: 'Diego'}, {position: 'attacker', number: 8, name: 'Samuel', substitute: true}, {position: 'goolkeeper', number: 1, name: 'Stone'}]}
-			];
-
-	new Template().substitute('{loop:}' + template + '{/loop:}', data) // -> <div><h1>Cameroon</h1><ul><li>Player #1: The Wall, goalkeeper</li><li>Player #9: Speedy, attacker</li><li>Player #25: Charly, middfield. substitute</li></ul></div><div><h1>Argentina</h1><ul><li>Player #10: Diego, middfield</li><li>Player #8: Samuel, attacker. substitute</li><li>Player #1: Stone, goolkeeper</li></ul></div>
 
 # Template Class {#template:constructor}
 
