@@ -39,7 +39,7 @@ provides: [Template]
 			end: '}'
 		},
 		
-		regExp: '{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_-]*){end}(.*?){begin}\\/\\1:\\2{end}',
+		regExp: '{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_.-]*){end}(.*?){begin}\\/\\1:\\2{end}',
 		
 		initialize: function (options) { 
 		
@@ -48,14 +48,12 @@ provides: [Template]
 		
 		substitute: function (string, data, options) {
 		
-			//console.log(string)
 			options = Object.append({}, this.options, options);
 			
 			var replace ={begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
 				regExp = new RegExp(this.regExp.substitute(replace), 'i'),
 				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
 			
-			//console.log(string.replace(/\n/g, '\u21b5'))
 			if(options.multiline) return this.parse(string.replace(/\n/g, options.placeholder), data, regExp, replace, simplereg, options).replace(new RegExp(options.placeholder.escapeRegExp(), 'g'), '\n');
 			
 			return this.parse(string, data, regExp, replace, simplereg, options)
@@ -150,7 +148,7 @@ provides: [Template]
 				
 				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the ' + (match.charAt(1) == '/' ? 'opening' : 'closing') + ' token missing ?', string);
 				
-				var value = this.evaluate(data, name);
+				var value = this.evaluate(data, name, true);
 				
 				return value == undefined ? '' : value
 				
@@ -178,9 +176,25 @@ provides: [Template]
 			return true
 		},
 		
-		evaluate: function (object, property) {
+		evaluate: function (object, property, ispath) {
 		
 			if(object == undefined) return undefined;
+			
+			if(ispath && property.indexOf('.') != -1) {
+			
+				var value = typeof object == 'function' ? object() : object, paths = property.split('.'), key;
+				
+				while(value && paths.length > 0) {
+				
+					key = paths.shift();
+					
+					if(typeof data[key] == undefined) return undefined;
+					
+					value = typeof value[key] == 'function' ? value[key]() : value[key]
+				}
+				
+				return value
+			}
 			
 			return typeof object[property] == 'function' ? object[property].call(object) : object[property]
 		}
