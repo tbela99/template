@@ -137,7 +137,7 @@ provides: [Template]
 						default: 
 
 							//custom tag parsing
-							if(options.parse) return this.parse(string.replace(matches[0], options.onParse(tag, matches, name, data, string, regExp, replace, simplereg, options) || ''), data, regExp, replace, simplereg, options);
+							if(options.parse) return this.parse(string.replace(matches[0], options.parse(tag, matches, name, data, string, regExp, replace, simplereg, options) || ''), data, regExp, replace, simplereg, options);
 					}
 				}
 			}
@@ -148,7 +148,7 @@ provides: [Template]
 				
 				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the ' + (match.charAt(1) == '/' ? 'opening' : 'closing') + ' token missing ?', string);
 				
-				var value = this.evaluate(data, name, true);
+				var value = this.evaluate(data, name);
 				
 				return value == undefined ? '' : value
 				
@@ -176,11 +176,11 @@ provides: [Template]
 			return true
 		},
 		
-		evaluate: function (object, property, ispath) {
+		evaluate: function (object, property) {
 		
 			if(object == undefined) return undefined;
 			
-			if(ispath && property.indexOf('.') != -1) {
+			if(property.indexOf('.') != -1) {
 			
 				var value = typeof object == 'function' ? object() : object, paths = property.split('.'), key;
 				
@@ -188,7 +188,7 @@ provides: [Template]
 				
 					key = paths.shift();
 					
-					if(typeof data[key] == undefined) return undefined;
+					if(value[key] == undefined) return undefined;
 					
 					value = typeof value[key] == 'function' ? value[key]() : value[key]
 				}
