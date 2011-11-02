@@ -3,7 +3,7 @@ Template
 
 Template is a context aware template engine with conditional replacement & iteration.
 
-[Demo](http://jsfiddle.net/tbela99/ygWKc/)
+[Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
 
 How to use
 ---------------------
