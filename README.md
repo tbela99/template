@@ -216,7 +216,7 @@ substitute the given object into the given template string and return DOM nodes.
 Template Method: addModifier 
 --------------------
 
-allow you to handle string remplacement with a custom function. this function accepts either a property name/function of an object with properties names as keys and functions as values
+allow you to handle string remplacement with a custom function. this function accepts either a property name/function or an object with properties names as keys and functions as values
 
 ### Syntax:
 
