@@ -204,7 +204,7 @@ substitute the given object into the given template string and return DOM nodes.
 
 ### Returns:
 
-* (*string*)
+* (*array*)
 
 ### Arguments:
 
