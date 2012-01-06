@@ -238,7 +238,7 @@ allow you to handle string remplacement with a custom function. this function ac
 
 ### Returns:
 
-* (*string*)
+* (*object*) this Template instance
 
 ### Modifier function Arguments:
 
