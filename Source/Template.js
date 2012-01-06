@@ -39,11 +39,22 @@ provides: [Template]
 			end: '}'
 		},
 		
+		modifiers: {},
+		
 		regExp: '{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_.-]*){end}(.*?){begin}\\/\\1:\\2{end}',
 		
 		initialize: function (options) { 
 		
 			this.options = Object.append(this.options, options) 
+		},
+		
+		addModifier: function (name, fn) {
+		
+			if(typeof name == 'object') Object.each(function (name, value) { this.modifiers[name] = value }, this);
+			
+			else this.modifiers[name] = fn;
+			
+			return this
 		},
 		
 		substitute: function (string, data, options) {
@@ -146,7 +157,7 @@ provides: [Template]
 			
 				if (match.charAt(0) == '\\') return match.slice(1);
 				
-				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the ' + (match.charAt(1) == '/' ? 'opening' : 'closing') + ' token missing ?', string);
+				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the ' + (match.charAt(1) == '/' ? 'opening' : 'closing') + ' token missing ? ' + (string.indexOf('\n') != -1 ? ' try to set the option {multiline: true}' : ''), string);
 				
 				var value = this.evaluate(data, name);
 				
@@ -180,13 +191,15 @@ provides: [Template]
 		
 			if(object == undefined) return undefined;
 			
+			if(this.modifiers[property] != undefined) return this.modifiers[property](object, name);
+			
 			if(property.indexOf('.') != -1) {
 			
-				var value = typeof object == 'function' ? object() : object, paths = property.split('.'), key;
+				var value = typeof object == 'function' ? object() : object, paths = property.split('.'), key, i;
 				
-				while(value && paths.length > 0) {
+				for(i = 0; i < paths.length; i++) {
 				
-					key = paths.shift();
+					key = paths[i];
 					
 					if(value[key] == undefined) return undefined;
 					
@@ -196,7 +209,7 @@ provides: [Template]
 				return value
 			}
 			
-			return typeof object[property] == 'function' ? object[property].call(object) : object[property]
+			return typeof object[property] == 'function' ? object[property]() : object[property]
 		}
 	})
 

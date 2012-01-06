@@ -18,19 +18,29 @@ Substitution is driven by tags that defined which action will be taken and wheth
 
 ## Example 2 {#Tag:example-2}
 
+	var template = 'Hi, my name is {fullname}';
+	
+	document.body.appendText(new Template().addModifier('fullname', function (data) {
+	
+		return '"' + data.name + ' ' + data.lastname + '"'
+		
+	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "Bob Malone" 
+	
+## Example 3 {#Tag:example-3}
+
 	var template = 'Hi, my name is {name}{if:age}, I am {age}{/if:age}';
 
 	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
 	new Template().substitute(template, {name: 'Bob', age: function () { return 11 }}) // -> Hi, my name is Bob, I am 11
 
-## Example 3 {#Tag:example-3}
+## Example 4 {#Tag:example-4}
 
 	var template = 'Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>{/if:kids}';
 
 	new Template().substitute(template, {name: 'Martina'}) // -> Hi, my name is Martina.
 	new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']}) // -> Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
 
-## Example 4 {#Tag:example-4}
+## Example 5 {#Tag:example-5}
 
 	var template = '<div><h1>{country}</h1>{defined:players}<ul>{repeat:players}<li>Player #{number}: {name}, {position}{not-empty:substitute}. substitute{/not-empty:substitute}</li>{/repeat:players}{/defined:players}</div>',
 		data = [
@@ -201,6 +211,39 @@ substitute the given object into the given template string and return DOM nodes.
 - string - (*string*) input template
 - data - (*object*) global context
 - options - (*object*, optional) override some of the template instance options.
+	
+
+Template Method: addModifier 
+--------------------
+
+allow you to handle string remplacement with a custom function. this function accepts either a property name/function of an object with properties names as keys and functions as values
+
+### Syntax:
+
+	var template = new Template();
+	
+	//syntax #1
+	template.addModifier('myname', function (data) {
+	
+		return 'my name is ' + data.name
+	});
+	
+	//syntax #2
+	template.addModifier({
+		fullname: function (data) { return data.name + ' ' + data.lastname }, 
+		othername: function (data) { return 'my other name is ' + data.othername }
+	});
+	
+	document.body.adopt(nodes);
+
+### Returns:
+
+* (*string*)
+
+### Modifier function Arguments:
+
+- data - (*mixed*) replacement context
+- property - (*string*) property name.
 	
 Known Issues:
 ----------------
