@@ -191,7 +191,7 @@ provides: [Template]
 		
 			if(object == undefined) return undefined;
 			
-			if(this.modifiers[property] != undefined) return this.modifiers[property](object, name);
+			if(this.modifiers[property] != undefined) return this.modifiers[property](object, property);
 			
 			if(property.indexOf('.') != -1) {
 			
