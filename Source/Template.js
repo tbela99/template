@@ -81,7 +81,6 @@ provides: [Template]
 						
 						var open,
 							close,
-							
 							index, //index of the first match
 							index2,//index of the last match
 							index3,//index of the {else: ...} match
@@ -89,13 +88,11 @@ provides: [Template]
 							test,
 							name, 
 							context, 
-							//el, 
 							elseif,
 							html, 
 							subject,
 							partial,
 							substring;
-							
 
 						tag = matches[1];
 						name = matches[2];
@@ -107,8 +104,9 @@ provides: [Template]
 						
 						if(index2 == -1) {
 						
-							if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the closing token missing ?', string);
-							string = string.replace(open, '')
+							if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + open + '", is the closing token missing ?', string);
+							string = string.replace(open, '');
+							continue;
 						}
 						
 						index = string.indexOf(open);
@@ -193,7 +191,8 @@ provides: [Template]
 							
 								var tmp = options.parse(tag, name, substring, partial, string, data, options);
 								
-								string = string.replace(partial, tmp == undefined ? '' : tmp)
+								string = string.replace(partial, tmp == undefined ? '' : tmp);
+								break;
 						}
 					}
 				}
