@@ -156,12 +156,12 @@ Syntax: {loop:} match1{/loop:}
 ##### Options:parse Arguments
 
 - tag - (*string*) tag name
-- matches - (*array*) matches
 - name - (*string*) property name
-- data - (*mixed*) current context
+- substring - (*string*) string
+- partial - (*string*) string
 - string - (*string*) current context string
+- data - (*mixed*) current context
 - options - (*options*) this instance options
-
 
 Template Method: substitute 
 --------------------
