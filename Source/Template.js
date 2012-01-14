@@ -28,11 +28,11 @@ provides: [Template]
 		
 			debug: true,
 			//handle unknown tag
-			parse: function (tag, matches /*, name, data, string, regExp, replace, simplereg, options */) {
+			parse: function (tag, name, substring/* , partial, string, data, options */) {
 			
-				/* if(options.debug)  */log('unknown tag: ' + tag, matches);
+				/* if(options.debug)  */log('unknown tag: ' + tag, name);
 				
-				return matches[3]
+				return substring
 			},
 			begin: '{',
 			end: '}'
@@ -191,7 +191,7 @@ provides: [Template]
 
 							default: 
 							
-								var tmp = options.parse(tag, matches, name, data, string, options);
+								var tmp = options.parse(tag, name, substring, partial, string, data, options);
 								
 								string = string.replace(partial, tmp == undefined ? '' : tmp)
 						}
