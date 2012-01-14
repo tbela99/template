@@ -19,10 +19,14 @@
 
 	var template = '<div>{players.0.name}: {players.0.palmares.0}</div>',
 	data = [
-				{country: 'Cameroon', players: [{position: 'goalkeeper', number: 1, name: 'The Wall', palmares: ['2008 - 2009: won the fanstastic cup', '2008 - 2009: won the premier league championship']},
-				{position: 'attacker', number: 9, name: 'Speedy', palmares: ['2008 - 2009: won the fanstastic cup', '2008 - 2009: won the premier league championship']}, 
-				{position: 'middfield', number: 25, name: 'Charly', palmares: ['2008 - 2009: won the super league championship'], substitute: true}]}, 
-				{country: 'Argentina', players: [{position: 'middfield', number: 10, name: 'Diego'}, {position: 'attacker', number: 8, name: 'Samuel', substitute: true}, {position: 'goolkeeper', number: 1, name: 'Stone'}]}
+				{country: 'Cameroon', players: [
+					{position: 'goalkeeper', number: 1, name: 'The Wall', palmares: ['2008 - 2009: won the fanstastic cup', '2008 - 2009: won the premier league championship']},
+					{position: 'attacker', number: 9, name: 'Speedy', palmares: ['2008 - 2009: won the fanstastic cup', '2008 - 2009: won the premier league championship']}, 
+					{position: 'middfield', number: 25, name: 'Charly', palmares: ['2008 - 2009: won the super league championship'], substitute: true}
+				]}, 
+				{country: 'Argentina', players: [
+					{position: 'middfield', number: 10, name: 'Diego'}, {position: 'attacker', number: 8, name: 'Samuel', substitute: true}, {position: 'goolkeeper', number: 1, name: 'Stone'}
+				]}
 			];
 	
 	document.body.adopt(new Template().html('{loop:}' + template + '{/loop:}', data)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>

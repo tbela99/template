@@ -150,8 +150,6 @@ Syntax: {loop:} match1{/loop:}
 
 * begin - (*string*, optional) opening token delimiter, default to *{*.
 * end - (*string*, optional) closing token delimiter, default to *}*.
-* multiline - (*boolean*, optional) this must be set to true if the template string contains the line feed character *(\n)*. default to *false*.
-* placeholder - (*string*, optional) character used as a temporary replacement for the line feed. default to *\u21b5*. this parameter is ignored if multiline is set to false.
 * debug - (*boolean*, optional) log messages in the console if there are token with no match.
 * parse - (*function*, optional) function called when an unknown tag is found. you can use this to handle your custom tag
 
@@ -162,9 +160,6 @@ Syntax: {loop:} match1{/loop:}
 - name - (*string*) property name
 - data - (*mixed*) current context
 - string - (*string*) current context string
-- regExp - (*regexp*) 
-- replace - (*regexp*)
-- simplereg - (*regexp*)
 - options - (*options*) this instance options
 
 
@@ -248,5 +243,5 @@ allow you to handle string remplacement with a custom function. this function ac
 Known Issues:
 ----------------
 
-The template should not content identical nested tag/property tokens because this will lead to unpredictable result. this is because the first token will always match the closest matching token.
+The template should not contain identical nested tag/property tokens because this will lead to unpredictable result. this is because the first token will always match the closest matching token.
 this template for example is not valid: '{repeat:name} {repeat:names}{whatevergoeshere} {/repeat:names} {/repeat:names}'
