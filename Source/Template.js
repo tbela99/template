@@ -200,12 +200,11 @@ provides: [Template]
 				while(matches)
 			}
 			
-			//log(simplereg)
 			return string.replace(simplereg, function(match, name) {
 			
 				if (match.charAt(0) == '\\') return match.slice(1);
 				
-				if(options.debug && name.indexOf(':') != -1) console.log('suspicious token found: "' + match + '", is the opening token missing ?', string);
+				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the opening token missing ?', string);
 				
 				var value = this.evaluate(data, name);
 				
