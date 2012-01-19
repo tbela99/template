@@ -3,6 +3,6 @@ author: tbela99
 category: Utilities
 tags: [template, engine, string]
 demo: http://jsfiddle.net/tbela99/ygWKc/1/
-current: 1.0.3
+current: 1.0.3.1
 sources:
   - "Source/Template.js"

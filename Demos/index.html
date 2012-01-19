@@ -33,7 +33,7 @@ document.body.adopt(new Template().html('<div>replacement with complex json:<br/
 /*
 */
 
-document.body.adopt(new Template({debug: true}).html('<div>replacement with {{ and }} as opening and closing brace:<br/>"{{title}} spends {{calc}}"</div>', {
+document.body.adopt(new Template({debug: true}).html('<div>replacement with \\{{ and }} as opening and closing brace:<br/>"{{title}} spends {{calc}}"</div>', {
 
 		title: "Joe",
 		calc: function() { 
@@ -48,7 +48,7 @@ document.body.adopt(new Template({debug: true}).html('<div>replacement with {{ a
 	})
 );
 	
-document.body.adopt(new Template({debug: true}).html('<div>replacement with [[ and ]] as opening and closing brace:<br/>"[[title]] spends [[calc]]"</div>', {
+document.body.adopt(new Template({debug: true}).html('<div>replacement with \\[[ and ]] as opening and closing brace:<br/>"[[title]] spends [[calc]]"</div>', {
 
 		title: "Joe",
 		calc: function() { 
@@ -67,7 +67,7 @@ document.body.adopt(new Template({debug: true}).html('<div>broken repeat test: {
 document.body.adopt(new Template({debug: true}).html('<div>loop test: {loop:} "{.}" {/loop:}</div>', [1, 3, 'mike', 'hello']));
 document.body.adopt(new Template({debug: true}).html('<div>repeat test: {repeat:list} "{.}" {/repeat:list}</div>', {list: [1, 3, 'mike', 'hello']}));
 
-document.body.adopt(new Template({debug: true}).html('<div>loop with multiline string test: {loop:} "{.}" \n{/loop:}</div>', (function () { return ['function', 1, 3, 'mike', 'hello'] } )(), {multiline: true}));
+document.body.appendText(new Template({debug: true}).substitute('loop with multiline string test: {loop:} "{.}" \n{/loop:}', (function () { return ['function', 1, 3, 'mike', 'hello'] } )()));
 
 //console.log(Template.substitute(template, ))
 </script>

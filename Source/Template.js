@@ -28,9 +28,9 @@ provides: [Template]
 		
 			debug: true,
 			//handle unknown tag
-			parse: function (tag, name, substring/* , partial, string, data, options */) {
+			parse: function (tag, name, substring, partial/* , string, data, options */) {
 			
-				/* if(options.debug)  */log('unknown tag: ' + tag, name);
+				/* if(options.debug)  */log('unknown tag: ' + tag, name, partial);
 				
 				return substring
 			},
@@ -62,7 +62,7 @@ provides: [Template]
 			
 			var replace ={begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
 				match = new RegExp('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_.-]*){end}'.substitute(replace), 'i'),
-				simplereg = new RegExp(('\\\\?{begin}([^\\s' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
+				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
 			
 			return this.parse(string, replace, match, simplereg, data, options)
 		},
@@ -134,7 +134,7 @@ provides: [Template]
 									
 									if(index3 != -1) {
 
-										if(!test) string = string.replace(partial, this.parse(string.substring(index3 + elseif.length, index2), replace, match, simplereg, subject, options));
+										if(!test) string = string.replace(partial, this.parse(string.substring(index3 + elseif.length, index2), replace, match, simplereg, data, options));
 
 										else if(context) string = string.replace(partial, this.parse(string.substring(index3 + elseif.length, index2), replace, match, simplereg, subject, options));
 										else string = string.replace(partial, this.parse(string.substring(index + open.length, index3), replace, match, simplereg, data, options));
@@ -178,7 +178,6 @@ provides: [Template]
 										
 										if(value == undefined) continue;
 										
-										//hopefully matches[3] should be a simple token. replace {.} by the property value
 										html += typeof value != 'object' ? substring.replace(single, value) : this.parse(substring, replace, match, simplereg, value, options)
 									}
 									
