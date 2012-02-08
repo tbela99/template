@@ -35,8 +35,11 @@
 				return values
 			}
 		}).substitute('values: {loop:}{.} {/loop:}<br/> "multiply2": {loop: multiply2}{.} {/loop:}<br/> "multiply2 multiply3": {loop: multiply2  multiply3}{.} {/loop:}', [1, 2, 3, 35, 'nice'])).grab(new Element('br')); // -> Hi, my name is Martina
+	
 	document.body.appendText(new Template().substitute(tmpl, {name: 'Martina'})).grab(new Element('br')); // -> Hi, my name is Martina
+	
 	document.body.appendText(new Template().substitute(tmpl, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']})).grab(new Element('br')) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	
 	document.body.appendText(new Template().addFilters('reverse', function (data) {
 	
 		var values = [];
@@ -46,6 +49,7 @@
 		return values
 		
 	}).substitute(' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>.{/if:kids}<br/>', data)).grab(new Element('br')) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	
 	document.body.appendText(new Template().addFilters({girls: function (data) {
 	
 			var values = [];
