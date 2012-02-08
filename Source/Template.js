@@ -2,7 +2,7 @@
 ---
 script: template.js
 license: MIT-style license.
-description: Template - Context aware template engine with conditional replacement & iteration.
+description: Template - Context aware template engine with conditional replacement, iterations and filters.
 copyright: Copyright (c) 2011 Thierry Bela
 authors: [Thierry Bela]
 
@@ -15,11 +15,11 @@ provides: [Template]
 ...
 */
 
-//TODO: use less regExp
-!function (context, undefined) {
+!function (context, undef) {
 
 "use strict";
 
+	function has(object, property) { return Object.prototype.hasOwnProperty.call(object, property) }
 	function log() { if(context.console && context.console.log) context.console.log.apply(context.console, arguments) }
 				
 	context.Template = new Class({
@@ -28,50 +28,53 @@ provides: [Template]
 		
 			debug: true,
 			//handle unknown tag
-			parse: function (tag, name, substring, partial/* , string, data, options */) {
+			parse: function (tag, name, substring, partial/* , filters, string, data, options */) {
 			
-				/* if(options.debug)  */log('unknown tag: ' + tag, name, partial);
+				/* if(options.debug)  */log('unknown template tag: ' + tag, name, partial);
 				
 				return substring
 			},
 			begin: '{',
 			end: '}'
-		},
-		
-		modifiers: {},
-		
+		},		
+		filters: {},
+		modifiers: {},		
 		initialize: function (options) { 
 		
-			this.options = Object.append(this.options, options) 
-		},
+			Object.append(this.options, options) 
+		},		
+		addFilters: function (name, fn) {
 		
+			if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
+			
+			else this.filters[name] = fn;
+			
+			return this
+		},		
 		addModifier: function (name, fn) {
 		
-			if(typeof name == 'object') Object.each(function (name, value) { this.modifiers[name] = value }, this);
+			if(typeof name == 'object') Object.each(name, function (value, name) { this.modifiers[name] = value }, this);
 			
 			else this.modifiers[name] = fn;
 			
 			return this
-		},
-		
-		html: function () { return Elements.from(this.substitute.apply(this, arguments)) },
-		
+		},		
+		html: function () { return Elements.from(this.substitute.apply(this, arguments)) },		
 		substitute: function (string, data, options) {
 		
 			options = Object.append({}, this.options, options);
 			
-			var replace ={begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
-				match = new RegExp('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_.-]*){end}'.substitute(replace), 'i'),
+			var replace = {begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
+				match = new RegExp('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_\\.-]*)(\\s([a-z0-9-_\\.]+))*?{end}'.substitute(replace), 'i'),
 				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
 			
 			return this.parse(string, replace, match, simplereg, data, options)
-		},
-		
+		},		
 		parse: function (string, replace, match, simplereg, data, options) {
 		
 			var matches;
 				
-			if(data != undefined) {
+			if(data != undef) {
 				
 				do {
 					
@@ -84,27 +87,35 @@ provides: [Template]
 							index, //index of the first match
 							index2,//index of the last match
 							index3,//index of the {else: ...} match
-							tag,
 							test,
-							name, 
 							context, 
 							elseif,
 							html, 
 							subject,
 							partial,
-							substring;
-
-						tag = matches[1];
-						name = matches[2];
-						
-						open = options.begin + tag + ':' + name + options.end;
+							substring,
+							values,
+							i,
+							tag = matches[1],
+							name = matches[2],
+							filters = matches[3] != undef ? matches[3] : '';
+							
+						open = options.begin + tag + ':' + name + filters + options.end;
 						close = options.begin + '/' + tag + ':' + name + options.end;
+						filters = filters == '' ? [] : filters.split(/\s+/g).filter(function (filter) { 
+						
+							var value = has(this.filters, filter);
+							
+							if(options.debug && filter != '' && !value) log('invalid template filter: ' + filter);
+							
+							return this.filters[filter]
+						}, this);
 						
 						index2 = string.indexOf(close);
 						
 						if(index2 == -1) {
 						
-							if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + open + '", is the closing token missing ?', string);
+							if(options.debug && name.indexOf(':') != -1) log('suspicious template token found: "' + open + '", is the closing token missing ?', string);
 							string = string.replace(open, '');
 							continue;
 						}
@@ -123,6 +134,9 @@ provides: [Template]
 
 									//switch context for object or array
 									subject = this.evaluate(data, name);
+									
+									//apply filters
+									for(i = 0; i < filters.length; i++) subject = filters[i](subject)
 									
 									test = this.test(tag, subject);
 									
@@ -154,6 +168,7 @@ provides: [Template]
 							case 'loop':
 								
 								html = '';
+								values = {};
 								subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : this.evaluate(data, name);
 								
 								if(!this.test(tag, subject)) string = string.replace(partial, '');
@@ -163,24 +178,28 @@ provides: [Template]
 									var value, property, single = new RegExp(options.begin.escapeRegExp() + '\.' + options.end.escapeRegExp(), 'g');
 									
 									//iterable - Array or Hash like
-									if(typeof subject.each == 'function')  subject.each(function (value) {
+									if(typeof subject.each == 'function')  subject.each(function (value, key) {
 									
 										if(typeof value == 'function') value = value();
 										
-										if(value == undefined) return;
+										if(value == undef) return;
 										
-										html += typeof value != 'object' ? substring.replace(single, value) : this.parse(substring, replace, match, simplereg, value, options)
+										values[key] = value;
 									}, this);
 									
-									else for(property in subject) if(subject.hasOwnProperty(property)) {
+									else for(property in subject) if(has(subject, property)) {
 									
 										value = this.evaluate(subject, property);
 										
-										if(value == undefined) continue;
+										if(value == undef) continue;
 										
-										html += typeof value != 'object' ? substring.replace(single, value) : this.parse(substring, replace, match, simplereg, value, options)
+										values[property] = value;
 									}
 									
+									//apply filters
+									for(i = 0; i < filters.length; i++) values = filters[i](values);
+									
+									Object.each(values, function (value) { html += typeof value != 'object' ? substring.replace(single, value) : this.parse(substring, replace, match, simplereg, value, options) }, this);
 									string = string.replace(partial, html)
 								}
 								
@@ -188,9 +207,9 @@ provides: [Template]
 
 							default: 
 							
-								var tmp = options.parse(tag, name, substring, partial, string, data, options);
+								var tmp = options.parse(tag, name, substring, partial, filters, string, data, options);
 								
-								string = string.replace(partial, tmp == undefined ? '' : tmp);
+								string = string.replace(partial, tmp == undef ? '' : tmp);
 								break;
 						}
 					}
@@ -207,11 +226,10 @@ provides: [Template]
 				
 				var value = this.evaluate(data, name);
 				
-				return value == undefined ? '' : value
+				return value == undef ? '' : value
 				
 			}.bind(this))
-		},
-	
+		},	
 		test: function (tag, value) {
 
 			switch(tag) {
@@ -221,23 +239,22 @@ provides: [Template]
 						return !!value;
 						
 				case 'defined':
-						return value != undefined;
+						return value != undef;
 				case 'empty':
 						return !value;
 						
 				case 'loop':
 				case 'repeat':
-						return value != undefined && ['object', 'function'].indexOf(typeof value)  != -1;
+						return value != undef && ['object', 'function'].indexOf(typeof value)  != -1;
 			}
 			
 			return true
-		},
-		
+		},		
 		evaluate: function (object, property) {
 		
-			if(object == undefined) return undefined;
+			if(object == undef) return undef;
 			
-			if(this.modifiers[property] != undefined) return this.modifiers[property](object, property);
+			if(this.modifiers[property] != undef) return this.modifiers[property](object, property);
 			
 			if(property.indexOf('.') != -1) {
 			
@@ -247,7 +264,7 @@ provides: [Template]
 				
 					key = paths[i];
 					
-					if(value[key] == undefined) return undefined;
+					if(value[key] == undef) return undef;
 					
 					value = typeof value[key] == 'function' ? value[key]() : value[key]
 				}

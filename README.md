@@ -1,7 +1,7 @@
 Template
 ============
 
-Template is a context aware template engine with conditional replacement & iteration.
+Template is a context aware template engine with conditional replacement, iterations and filters.
 
 [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
 
@@ -18,6 +18,13 @@ Substitution is driven by tags that defined which action will be taken and wheth
 
 ## Example 2 {#Tag:example-2}
 
+	var template = 'Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>{/if:kids}';
+
+	new Template().substitute(template, {name: 'Martina'}) // -> Hi, my name is Martina.
+	new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']}) // -> Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+
+## Example 3 {#Tag:example-modifiers}
+
 	var template = 'Hi, my name is {fullname}';
 	
 	document.body.appendText(new Template().addModifier('fullname', function (data) {
@@ -26,21 +33,51 @@ Substitution is driven by tags that defined which action will be taken and wheth
 		
 	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "Bob Malone" 
 	
-## Example 3 {#Tag:example-3}
+## Example 4 {#Tag:example-filters}
+
+	var	template = new Template().addFilters({reverse: function (data) {
+	
+				var values = [];
+				
+				Object.each(data, function (value) { values.unshift(value) });
+				
+				return values
+			
+			},
+			boys: function (data) {
+		
+				var values = [];
+				
+				Object.each(data, function (value) { if(value.sex == 'M') values.push(value) });
+				
+				return values
+				
+			}
+		),
+		tmpl = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>.{/if:kids}<br/>',
+		data = {
+					name: 'Emily', 
+					kids: [
+						{name: 'Brian', sex: 'M'},
+						{name: 'Edith', sex: 'F'}, 
+						{name: 'Spider man', sex: 'M'}
+					]
+				};
+	
+	//kids appear in reversed order
+	document.body.appendText(template.substitute(tmpl, data)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Spider man</li><li>Edith</li><li>Brian</li></ul>.<br/>
+	
+	//how many boyz I got ?
+	document.body.appendText(template.substitute('{if:kids boys} I have {length} boys.{/if:kids}', data)) // ->   I have 2 boys
+
+## Example 5 {#Tag:example-5}
 
 	var template = 'Hi, my name is {name}{if:age}, I am {age}{/if:age}';
 
 	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
 	new Template().substitute(template, {name: 'Bob', age: function () { return 11 }}) // -> Hi, my name is Bob, I am 11
 
-## Example 4 {#Tag:example-4}
-
-	var template = 'Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>{/if:kids}';
-
-	new Template().substitute(template, {name: 'Martina'}) // -> Hi, my name is Martina.
-	new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']}) // -> Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
-
-## Example 5 {#Tag:example-5}
+## Example 6 {#Tag:example-6}
 
 	var template = '<div><h1>{country}</h1>{defined:players}<ul>{repeat:players}<li>Player #{number}: {name}, {position}{not-empty:substitute}. substitute{/not-empty:substitute}</li>{/repeat:players}{/defined:players}</div>',
 		data = [
@@ -159,6 +196,7 @@ Syntax: {loop:} match1{/loop:}
 - name - (*string*) property name
 - substring - (*string*) string
 - partial - (*string*) string
+- filters - (*array*) array of filters
 - string - (*string*) current context string
 - data - (*mixed*) current context
 - options - (*options*) this instance options
@@ -208,6 +246,89 @@ substitute the given object into the given template string and return DOM nodes.
 - options - (*object*, optional) override some of the template instance options.
 	
 
+Template Method: addFilters 
+--------------------
+
+allow you to alter the data actually replaced in a given tag. this function accepts either a property name/function or an object with properties names as keys and functions as values.
+you can apply multiple filter to a tag, they must be separed by one or many spaces.
+
+### Syntax:
+
+	var template = new Template();
+	
+	//syntax #1
+	template.addFilters('filter', function (data) {
+	
+		values = [];
+		
+		//some code logic here ...
+		
+		return values
+	});
+	
+	//syntax #2
+	template.addFilters({
+	
+		odd: function (data) {
+		
+			return Object.filter(data, function (value, key) { return key % 2 == 1 })
+		},
+		even: function (data) {
+		
+			return Object.filter(data, function (value, key) { return key % 2 == 0 })
+		}
+	});
+	
+### Returns:
+
+* (*object*) this Template instance
+
+### Example:
+
+	var	template = new Template().addFilters({reverse: function (data) {
+	
+				var values = [];
+				
+				Object.each(data, function (value) { values.unshift(value) });
+				
+				return values
+			
+			},
+			boys: function (data) {
+		
+				var values = [];
+				
+				Object.each(data, function (value) { if(value.sex == 'M') values.push(value) });
+				
+				return values
+				
+			}
+		),
+		tmpl = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>.{/if:kids}<br/>',
+		data = {
+					name: 'Emily', 
+					kids: [
+						{name: 'Brian', sex: 'M'},
+						{name: 'Edith', sex: 'F'}, 
+						{name: 'Spider man', sex: 'M'}
+					]
+				};
+	
+	//kids appear in reversed order
+	document.body.appendText(template.substitute(tmpl, data)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Spider man</li><li>Edith</li><li>Brian</li></ul>.<br/>
+	
+	//how many boyz I got ?
+	document.body.appendText(template.substitute('{if:kids boys} I have {length} boys.{/if:kids}', data)) // ->   I have 2 boys
+
+### Filter function Arguments:
+
+- data - (*mixed*) values being replaced
+	
+### Filter function Returns:
+
+- (*mixed*) values that will actually be used
+	
+
 Template Method: addModifier 
 --------------------
 
@@ -234,6 +355,17 @@ allow you to handle string remplacement with a custom function. this function ac
 ### Returns:
 
 * (*object*) this Template instance
+
+### Example:
+
+	var tmpl = 'Hi, my name is {fullname}',
+		data = {name: 'Bob', lastname: 'Malone'};
+	
+	document.body.appendText(new Template().addModifier('fullname', function (data) {
+	
+		return '"' + data.name + ' ' + data.lastname + '"'
+		
+	}).substitute(tmpl, data)) // -> Hi, my name is "Bob Malone"	
 
 ### Modifier function Arguments:
 

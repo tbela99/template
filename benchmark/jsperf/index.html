@@ -86,7 +86,7 @@
         <th scope="row" id="title-1"><div>Old implementation</div></th>
         <td>
         <pre><code>
-		template.substitute(tmpl, data)</code></pre>
+		template.substitute2(tmpl, data)</code></pre>
         </td>
         <td id="results-1" class="results"></td>
       </tr>
@@ -94,7 +94,7 @@
         <th scope="row" id="title-2"><div>New implementation</div></th>
         <td>
         <pre><code>
-		template.string(tmpl, data)</code></pre>
+		template.substitute(tmpl, data)</code></pre>
         </td>
         <td id="results-2" class="results"></td>
       </tr>
@@ -182,12 +182,12 @@
 			
 	tmpl = '{loop:}' + tmpl + '{/loop:}';
 	
-  ui.add('Old implementation', function() {
+  ui.add('Current implementation (with filters)', function() {
   
 		template.substitute(tmpl, data)
-  }).add('New implementation', function() {
-   
-		template.string(tmpl, data)
+  }).add('Old implementation', function() {
+  
+		template.substitute2(tmpl, data)
   })
   /* 
   .add('Error', function() {
