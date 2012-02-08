@@ -11,6 +11,30 @@
 	var tmpl = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>.{/if:kids}<br/>',
 		data = {name: 'Emily', kids: [{name: 'Brian', sex: 'M'}, {name: 'Edith', sex: 'F'}, {name: 'Spider man', sex: 'M'}]};
 	
+	document.body.appendText(new Template().addFilters({
+	
+			multiply2: function(data) { 
+		
+				var values = [];
+				Object.each(data, function (value) {
+			
+					if(!isNaN(value)) values.push(value * 2)
+				});
+				
+				return values
+			},
+			multiply3: function(data) { 
+		
+				var values = [];
+				Object.each(data, function (value) {
+			
+					
+					if(!isNaN(value)) values.push(value * 3)
+				});
+				
+				return values
+			}
+		}).substitute('values: {loop:}{.} {/loop:}<br/> "multiply2": {loop: multiply2}{.} {/loop:}<br/> "multiply2 multiply3": {loop: multiply2  multiply3}{.} {/loop:}', [1, 2, 3, 35, 'nice'])).grab(new Element('br')); // -> Hi, my name is Martina
 	document.body.appendText(new Template().substitute(tmpl, {name: 'Martina'})).grab(new Element('br')); // -> Hi, my name is Martina
 	document.body.appendText(new Template().substitute(tmpl, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']})).grab(new Element('br')) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
 	document.body.appendText(new Template().addFilters('reverse', function (data) {

@@ -65,7 +65,7 @@ provides: [Template]
 			options = Object.append({}, this.options, options);
 			
 			var replace = {begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
-				match = new RegExp('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_\\.-]*)(\\s([a-z0-9-_\\.]+))*?{end}'.substitute(replace), 'i'),
+				match = new RegExp(('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_\\.-]*)([^' + (['[', ']'].indexOf(options.end) != -1 ? replace.end : replace.end.replace(/\\/g, '')) + ']+)?{end}').substitute(replace), 'i'),
 				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
 			
 			return this.parse(string, replace, match, simplereg, data, options)
@@ -108,7 +108,10 @@ provides: [Template]
 							
 							if(options.debug && filter != '' && !value) log('invalid template filter: ' + filter);
 							
-							return this.filters[filter]
+							return value
+						}, this).map(function (value) {
+						
+							return this.filters[value]
 						}, this);
 						
 						index2 = string.indexOf(close);
