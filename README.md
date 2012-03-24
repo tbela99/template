@@ -25,14 +25,6 @@ Substitution is driven by tags that defined which action will be taken and wheth
 
 ## Example 3 {#Tag:example-modifiers}
 
-	var template = 'Hi, my name is {fullname}';
-	
-	document.body.appendText(new Template().addModifier('fullname', function (data) {
-	
-		return '"' + data.name + ' ' + data.lastname + '"'
-		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "Bob Malone" 
-	
 	//display formatted file size
 	Number.implement({
 		
@@ -54,6 +46,25 @@ Substitution is driven by tags that defined which action will be taken and wheth
 		return (+data[property]).toFileSize()
 		
 	}).substitute(template, {name: 'Bob.jpg', size: 14578559})) // -> File: "Bob.jpg", size: 13.90 MB 
+	
+	//format user name
+	var template = 'Hi, my name is {fullname}';
+	
+	document.body.appendText(new Template().addModifier('fullname', function (data) {
+	
+		return '"' + data.name + ' ' + data.lastname + '"'
+		
+	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "Bob Malone" 
+	
+	//format user name, another example
+	var template = 'Hi, my name is {fullname uppercase}';
+	
+	document.body.appendText(new Template().addModifier('fullname', function (data, transform) {
+	
+		if(transform == 'uppercase') return '"' + data.name.toUpperCase() + ' ' + data.lastname.toUpperCase() + '"';
+		return '"' + data.name + ' ' + data.lastname + '"'
+		
+	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "BOB MALONE" 
 	
 ## Example 4 {#Tag:example-filters}
 
