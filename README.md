@@ -326,7 +326,7 @@ you can apply multiple filter to a tag, they must be separed by one or many spac
 	
 ### Filter function Returns:
 
-- (*mixed*) values that will actually be used
+- (*mixed*) values that will actually be used for replacement
 	
 
 Template Method: addModifier 

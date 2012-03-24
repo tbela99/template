@@ -20,8 +20,9 @@ provides: [Template]
 "use strict";
 
 	function has(object, property) { return Object.prototype.hasOwnProperty.call(object, property) }
-	function log() { if(context.console && context.console.log) context.console.log.apply(context.console, arguments) }
-				
+	
+	var log = (function () { return context.console && console.log ? function () { console.log.apply(console, arguments) } : function () { } })();
+	
 	context.Template = new Class({
 
 		options: {
@@ -43,7 +44,7 @@ provides: [Template]
 		
 			Object.append(this.options, options) 
 		},		
-		addFilters: function (name, fn) {
+		addFilter: function (name, fn) {
 		
 			if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
 			
@@ -116,7 +117,7 @@ provides: [Template]
 						
 						index2 = string.indexOf(close);
 						
-						if(index2 == -1) {
+						if(index2 == -1) { //
 						
 							if(options.debug && name.indexOf(':') != -1) log('suspicious template token found: "' + open + '", is the closing token missing ?', string);
 							string = string.replace(open, '');
@@ -162,7 +163,7 @@ provides: [Template]
 										if(!test) string = string.replace(partial, '');
 
 										else if(context) string = string.replace(partial, this.parse(substring, replace, match, simplereg, subject, options));
-										else string = this.parse(string.replace(partial, this.parse(substring, data, options)), replace, match, simplereg, data, options);
+										else string = this.parse(string.replace(partial, this.parse(substring, replace, match, simplereg, data, options)), replace, match, simplereg, data, options);
 									}
 									
 								break;
@@ -225,8 +226,6 @@ provides: [Template]
 			
 				if (match.charAt(0) == '\\') return match.slice(1);
 				
-				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the opening token missing ?', string);
-				
 				var value = this.evaluate(data, name);
 				
 				return value == undef ? '' : value
@@ -257,7 +256,16 @@ provides: [Template]
 		
 			if(object == undef) return undef;
 			
+			//apply modifier without arguments
 			if(this.modifiers[property] != undef) return this.modifiers[property](object, property);
+			
+			//apply modifier with arguments
+			if(property.indexOf(' ') != -1) {
+			
+				var args = property.split(/\s+/), name = args.shift();
+				
+				if(this.modifiers[name] != undef) return this.modifiers[name].apply(null, [object, property].append(args))
+			}
 			
 			if(property.indexOf('.') != -1) {
 			
