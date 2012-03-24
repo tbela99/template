@@ -257,14 +257,14 @@ provides: [Template]
 			if(object == undef) return undef;
 			
 			//apply modifier without arguments
-			if(this.modifiers[property] != undef) return this.modifiers[property](object, property);
+			if(this.modifiers[property] != undef) return this.modifiers[property](object);
 			
 			//apply modifier with arguments
 			if(property.indexOf(' ') != -1) {
 			
 				var args = property.split(/\s+/), name = args.shift();
 				
-				if(this.modifiers[name] != undef) return this.modifiers[name].apply(null, [object, property].append(args))
+				if(this.modifiers[name] != undef) return this.modifiers[name].apply(null, [object].append(args))
 			}
 			
 			if(property.indexOf('.') != -1) {
