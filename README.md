@@ -33,6 +33,28 @@ Substitution is driven by tags that defined which action will be taken and wheth
 		
 	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "Bob Malone" 
 	
+	//display formatted file size
+	Number.implement({
+		
+		toFileSize: function(units) {
+		
+			if(this == 0) return 0;
+			
+			var s = ['bytes', 'kb', 'MB', 'GB', 'TB', 'PB'],
+				e = Math.floor(Math.log(this) / Math.log(1024));
+
+			return (this / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units && units[e] ? units[e] : s[e]);
+		}
+	});
+	
+	var template = 'File {name} size {toFileSize size}';
+	
+	document.body.appendText(new Template().addModifier('toFileSize', function (data, property) {
+	
+		return (+data[property]).toFileSize()
+		
+	}).substitute(template, {name: 'Bob.jpg', size: 14578559})) // -> File: "Bob.jpg", size: 13.90 MB 
+	
 ## Example 4 {#Tag:example-filters}
 
 	var	template = new Template().addFilters({reverse: function (data) {

@@ -37,5 +37,28 @@
 		
 	}).substitute(template, {name: 'Bob', lastname: 'Malone'}))
 	
+	//convert size to file size.
+	
+	Number.implement({
+		
+		toFileSize: function(units) {
+		
+			if(this == 0) return 0;
+			
+			var s = ['bytes', 'kb', 'MB', 'GB', 'TB', 'PB'],
+				e = Math.floor(Math.log(this) / Math.log(1024));
+
+			return (this / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units && units[e] ? units[e] : s[e]);
+		}
+	});
+	
+	template =  'File: "{name}", size: {toFileSize size}';
+	
+	document.body.grab(new Element('div[html=<strong>#3 modifier with parameters</strong> "File: \"{name}\", size: {toFileSize size}"]')).appendText(new Template().addModifier('toFileSize', function (data, property) {
+	
+		return (+data[property]).toFileSize()
+		
+	}).substitute(template, {name: 'Bob.jpg', size: 14578559})) // -> File: "Bob.jpg", size: 13.90 MB 
+	
 </script>
 </body></html>
