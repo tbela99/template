@@ -10,7 +10,7 @@
 
 	var template = 'Hi, my name is {fullname}';
 	
-	document.body.grab(new Element('div[html=<strong>#1 modifier with no parameter</strong>]')).appendText(new Template().addModifier('fullname', function (data) {
+	document.body.grab(new Element('div[html=<strong>#1 modifier with no parameter:</strong> "Hi, my name is {fullname}"]')).appendText(new Template().addModifier('fullname', function (data) {
 	
 		return '"' + data.name + ' ' + data.lastname + '"'
 		
@@ -19,7 +19,7 @@
 	//passing arguments to the modifier
 	var template = 'Hi, my name is {fullname lowercase}';
 	
-	document.body.grab(new Element('div[html=<strong>#2 modifier with parameters</strong>]')).appendText(new Template().addModifier('fullname', function (data, property, transform) {
+	document.body.grab(new Element('div[html=<strong>#2 modifier with parameters</strong> "Hi, my name is {fullname lowercase}"]')).appendText(new Template().addModifier('fullname', function (data, property, transform) {
 	
 		if(transform == 'lowercase') return '"' + data.name.toLowerCase() + ' ' + data.lastname.toLowerCase() + '"'
 		return '"' + data.name + ' ' + data.lastname + '"'
