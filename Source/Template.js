@@ -51,12 +51,10 @@ provides: [Template]
 			name,
 			filters,
 			substring,
-			loop = 0,
 			original = template;
 		
 		do {
 		
-			if(loop++ > 5) break;
 			filters = '';
 			index = template.indexOf(options.begin);
 			cIndex = template.indexOf(options.end, index);
