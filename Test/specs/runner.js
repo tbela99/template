@@ -134,7 +134,7 @@ describe("Template test", function() {
 		end: ']]'
 	  })).toEqual("Joe spends 6");
     })
-  });
+  })
 	
-  });
+});
   
