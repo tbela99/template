@@ -3,66 +3,79 @@
 	comparing two implementations
  */
  
-  Template.implement({
-  
-		substitute2: function (string, data, options) {
+!function (window, undef) {
+
+  window.Template.implement({
+		
+		substitute2: function (template, data, options) {
 		
 			options = Object.append({}, this.options, options);
 			
-			var replace ={begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
-				match = new RegExp('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_.-]*){end}'.substitute(replace), 'i'),
-				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
+			var replace = {begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
+				match = new RegExp(('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_\\.-]*)([^' + (['[', ']'].indexOf(options.end) != -1 ? replace.end : replace.end.replace(/\\/g, '')) + ']+)?{end}').substitute(replace), 'i'),
+				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.end) != -1 ? replace.end : replace.end.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
 			
-			return this.parse2(string, replace, match, simplereg, data, options)
-		},
+			return this.parse(template, replace, match, simplereg, data, options)
+		},	
+		parse: function (template, replace, match, simplereg, data, options) {
 		
-		parse2: function (string, replace, match, simplereg, data, options) {
-		
-			var matches;
+			var matches, 
+				open,
+				close,
+				index, //index of the first match
+				index2,//index of the last match
+				index3,//index of the {else: ...} match
+				test,
+				context, 
+				elseif,
+				html, 
+				subject,
+				partial,
+				substring,
+				values,
+				i,
+				tag,
+				name,
+				filters;
 				
-			if(data != undefined) {
+			if(data != undef) {
 				
 				do {
 					
-					matches = match.exec(string);
+					matches = match.exec(template);
 
 					if(matches) {
 						
-						var open,
-							close,
-							
-							index, //index of the first match
-							index2,//index of the last match
-							index3,//index of the {else: ...} match
-							tag,
-							test,
-							name, 
-							context, 
-							//el, 
-							elseif,
-							html, 
-							subject,
-							partial,
-							substring;
-							
-
 						tag = matches[1];
 						name = matches[2];
-						
-						open = options.begin + tag + ':' + name + options.end;
+						filters  = matches[3] != undef ? matches[3] : '';
+							
+						open = options.begin + tag + ':' + name + filters + options.end;
 						close = options.begin + '/' + tag + ':' + name + options.end;
+						filters = filters == '' ? [] : filters.split(/\s+/g).filter(function (filter) { 
 						
-						index2 = string.indexOf(close);
+							var value = has(this.filters, filter);
+							
+							if(options.debug && filter != '' && !value) log('invalid template filter: ' + filter);
+							
+							return value
+						}, this).map(function (value) {
 						
-						if(index2 == -1) {
+							return this.filters[value]
+						}, this);
 						
-							if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the closing token missing ?', string);
-							string = string.replace(open, '')
+						index2 = template.indexOf(close);
+						
+						if(index2 == -1) { //
+						
+							if(options.debug && name.indexOf(':') != -1) log('suspicious template token found: "' + open + '", is the closing token missing ?', template);
+							template = template.replace(open, '');
+							continue;
 						}
 						
-						index = string.indexOf(open);
+						index = template.indexOf(open);
 						
-						substring = string.substring(index + open.length, index2);
+						substring = template.substring(index + open.length, index2);
 						partial = open + substring + close;
 						
 						switch(tag) {
@@ -75,28 +88,31 @@
 									//switch context for object or array
 									subject = this.evaluate(data, name);
 									
+									//apply filters
+									for(i = 0; i < filters.length; i++) subject = filters[i](subject)
+									
 									test = this.test(tag, subject);
 									
 									context = test && tag == 'if' && typeof subject == 'object';
 									elseif = options.begin + 'else:' + name + options.end;
 									
 									//if-else or something like that
-									index3 = string.indexOf(elseif);
+									index3 = template.indexOf(elseif);
 									
 									if(index3 != -1) {
 
-										if(!test) string = string.replace(partial, this.parse2(string.substring(index3 + elseif.length, index2), replace, match, simplereg, subject, options));
+										if(!test) template = template.replace(partial, this.parse(template.substring(index3 + elseif.length, index2), replace, match, simplereg, data, options));
 
-										else if(context) string = string.replace(partial, this.parse2(string.substring(index3 + elseif.length, index2), replace, match, simplereg, subject, options));
-										else string = string.replace(partial, this.parse2(string.substring(index + open.length, index3), replace, match, simplereg, data, options));
+										else if(context) template = template.replace(partial, this.parse(template.substring(index3 + elseif.length, index2), replace, match, simplereg, subject, options));
+										else template = template.replace(partial, this.parse(template.substring(index + open.length, index3), replace, match, simplereg, data, options));
 									}
 									
 									else {
 									
-										if(!test) string = string.replace(partial, '');
+										if(!test) template = template.replace(partial, '');
 
-										else if(context) string = string.replace(partial, this.parse2(substring, replace, match, simplereg, subject, options));
-										else string = this.parse2(string.replace(partial, this.parse2(substring, data, options)), replace, match, simplereg, data, options);
+										else if(context) template = template.replace(partial, this.parse(substring, replace, match, simplereg, subject, options));
+										else template = this.parse(template.replace(partial, this.parse(substring, replace, match, simplereg, data, options)), replace, match, simplereg, data, options);
 									}
 									
 								break;
@@ -105,44 +121,49 @@
 							case 'loop':
 								
 								html = '';
+								values = {};
 								subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : this.evaluate(data, name);
 								
-								if(!this.test(tag, subject)) string = string.replace(partial, '');
+								if(!this.test(tag, subject)) template = template.replace(partial, '');
 								
 								else {
 									
 									var value, property, single = new RegExp(options.begin.escapeRegExp() + '\.' + options.end.escapeRegExp(), 'g');
 									
 									//iterable - Array or Hash like
-									if(typeof subject.each == 'function')  subject.each(function (value) {
+									if(typeof subject.each == 'function')  subject.each(function (value, key) {
 									
 										if(typeof value == 'function') value = value();
 										
-										if(value == undefined) return;
+										if(value == undef) return;
 										
-										html += typeof value != 'object' ? substring.replace(single, value) : this.parse2(substring, replace, match, simplereg, value, options)
+										values[key] = value;
 									}, this);
 									
-									else for(property in subject) if(subject.hasOwnProperty(property)) {
+									else for(property in subject) if(has(subject, property)) {
 									
 										value = this.evaluate(subject, property);
 										
-										if(value == undefined) continue;
+										if(value == undef) continue;
 										
-										//hopefully matches[3] should be a simple token. replace {.} by the property value
-										html += typeof value != 'object' ? substring.replace(single, value) : this.parse2(substring, replace, match, simplereg, value, options)
+										values[property] = value;
 									}
 									
-									string = string.replace(partial, html)
+									//apply filters
+									for(i = 0; i < filters.length; i++) values = filters[i](values);
+									
+									Object.each(values, function (value) { html += typeof value != 'object' ? substring.replace(single, value) : this.parse(substring, replace, match, simplereg, value, options) }, this);
+									template = template.replace(partial, html)
 								}
 								
 								break;
 
 							default: 
 							
-								var tmp = options.parse2(tag, matches, name, data, string, options);
+								var tmp = options.parse(tag, name, substring, partial, filters, template, data, options);
 								
-								string = string.replace(partial, tmp == undefined ? '' : tmp)
+								template = template.replace(partial, tmp == undef ? '' : tmp);
+								break;
 						}
 					}
 				}
@@ -150,18 +171,82 @@
 				while(matches)
 			}
 			
-			//log(simplereg)
-			return string.replace(simplereg, function(match, name) {
+			return template.replace(simplereg, function(match, name) {
 			
 				if (match.charAt(0) == '\\') return match.slice(1);
 				
-				if(options.debug && name.indexOf(':') != -1) console.log('suspicious token found: "' + match + '", is the opening token missing ?', string);
-				
 				var value = this.evaluate(data, name);
 				
-				return value == undefined ? '' : value
+				return value == undef ? '' : value
 				
 			}.bind(this))
-		}	
-	});
+		},
+		test: function (tag, value) {
+
+			switch(tag) {
+			
+				case 'if':
+				case 'not-empty':
+						return !!value;
+						
+				case 'defined':
+						return value != undef;
+				case 'empty':
+						return !value;
+						
+				case 'loop':
+				case 'repeat':
+						return value != undef && ['object', 'function'].indexOf(typeof value)  != -1;
+			}
+			
+			return true
+		},		
+		evaluate: function (object, property, args) {
+		
+			if(object == undef) return '';
+			
+			var value;
+			//apply modifier without arguments
+			if(this.modifiers[property] != undef) {
+			
+				value = this.modifiers[property].apply([object].append(args));
+				
+				return value == undef ? '' : value;
+			}
+			
+			//apply modifier with arguments
+			if(property.indexOf(' ') != -1) {
+			
+				var args = property.split(/\s+/), name = args.shift();
+				
+				if(this.modifiers[name] != undef) {
+				
+					value = this.modifiers[name].apply(null, [object].append(args));
+					return value == undef ? '' : value
+				}
+			}
+			
+			if(property.indexOf('.') != -1) {
+			
+				value = typeof object == 'function' ? object() : object, paths = property.split('.'), key, i;
+				
+				for(i = 0; i < paths.length; i++) {
+				
+					key = paths[i];
+					
+					if(value[key] == undef) return '';
+					
+					value = typeof value[key] == 'function' ? value[key]() : value[key]
+				}
+				
+				return value == undef ? '' : value;
+			}
+			
+			value = typeof object[property] == 'function' ? object[property]() : object[property];
+			
+			return value == undef ? '' : value
+		}
+	})
+	
+}(this);
 		  

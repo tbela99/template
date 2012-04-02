@@ -1,0 +1,52 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Template test runner</title>
+
+  <link rel="shortcut icon" type="image/png" href="jasmine/jasmine_favicon.png">
+
+  <link href="jasmine/jasmine.css" rel="stylesheet"/>
+  <script type="text/javascript" src="jasmine/jasmine.js"></script>
+
+
+  <!-- include source files here... -->
+  <script type="text/javascript" src="jasmine/src/html/HtmlReporterHelpers.js"></script>
+  <script type="text/javascript" src="jasmine/src/html/HtmlReporter.js"></script>
+  <script type="text/javascript" src="jasmine/src/html/HtmlReporterHelpers.js"></script>
+  <script type="text/javascript" src="jasmine/src/html/ReporterView.js"></script>
+  <script type="text/javascript" src="jasmine/src/html/SpecView.js"></script>
+  <script type="text/javascript" src="jasmine/src/html/SuiteView.js"></script>
+  <script type="text/javascript" src="jasmine/src/html/TrivialReporter.js"></script>
+  <script type="text/javascript" src="jasmine/src/console/ConsoleReporter.js"></script>
+  <script type="text/javascript" src="../mootools.js"></script>
+  <script type="text/javascript" src="../Source/Template.js"></script>
+
+</head>
+
+<body>
+  <!-- include spec files here... -->
+  <script type="text/javascript" src="specs/runner.js"></script>
+
+  <script type="text/javascript">
+    (function() {
+      var jasmineEnv = jasmine.getEnv();
+      jasmineEnv.updateInterval = 1000;
+
+      var htmlReporter = new jasmine.HtmlReporter();
+
+      jasmineEnv.addReporter(htmlReporter);
+
+      jasmineEnv.specFilter = function(spec) {
+        return htmlReporter.specFilter(spec);
+      };
+
+	  
+	jasmineEnv.execute();
+
+    })();
+  </script>
+
+</body>
+</html>

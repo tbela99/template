@@ -21,19 +21,300 @@ provides: [Template]
 
 	function has(object, property) { return Object.prototype.hasOwnProperty.call(object, property) }
 	
-	var log = (function () { return context.console && console.log ? function () { console.log.apply(console, arguments) } : function () { } })();
+	var log = (function () { return context.console && console.log ? function () { console.log.apply(console, arguments) } : function () { } })(),
+		cache = {};
+		
+	//the idea is to return template token + self evaluated js
+	function compile(template, modifiers, _filters, options) {
+	
+		if(cache[template]) return cache[template];
+		
+		cache[template] = parse(template, modifiers, _filters, options);
+		
+		return cache[template]
+	}
+	
+	//
+	function parse (template, modifiers, _filters, options) {
+	
+		var code = '""', 
+			glue = options.debug ? '+\n' : '+',
+			index,
+			cIndex,
+			length = options.begin.length ,
+			cTagIndex,
+			string = '',
+			match,
+			oTag,
+			cTag,
+			tag,
+			name,
+			filters,
+			substring,
+			loop = 0,
+			original = template;
+		
+		do {
+		
+			if(loop++ > 5) break;
+			filters = '';
+			index = template.indexOf(options.begin);
+			cIndex = template.indexOf(options.end, index);
+			
+			if(index != -1 && cIndex != -1) {
+			
+				if(template.charAt(index - 1) == '\\') {
+				
+					string = template.substring(0, cIndex + length);
+					
+					code += glue + quote(template.substring(0, index - 1) + template.substring(index, cIndex + length));
+					template = template.replace(string, '');
+					continue;
+				}
+				
+				oTag = template.substring(index, cIndex + length);
+				string = template.substring(0, index);
+				match = template.substring(index + length, cIndex);
+				
+				if(match.indexOf(':') == -1) {
+				
+					name = match;
+					
+					if(match.indexOf(' ') != -1) {
+						
+						filters = match.split(' ');
+						name = filters.shift();
+					}
+					
+					match = quote(name);
+					
+					code += glue + quote(string) + glue + (modifiers[name] ? 'modifiers[' + match + '](data' + (filters && filters.length > 0 ? ',' + filters.map(function (v) { return quote(v) }) : '') + ')' : name.indexOf('.') == -1 ? 'evaluate(data,' + match + ')' : 'nestedeval(data,[' + name.split('.').map(function (v) { return quote(v) }) + '])');
+					
+					template = template.replace(string + oTag, '')
+				}
+				
+				else {
+				
+					code += glue + quote(string);
+					
+					filters = match.split(':');
+					tag = filters.shift();
+					name = filters[0].charAt(0) == ' ' ? '' : filters.shift();
+					
+					if(filters.length > 0) filters = filters.join(' ').split(' ').filter(function (filter) { return _filters[filter] }).map(function (filter) { return _filters[filter] })
+					
+					match = quote(name);
+					
+					cTag = options.begin + '/' + tag + ':' + name + options.end;
+					
+					cTagIndex = template.indexOf(cTag);
+					
+					if(cTagIndex == -1) {
+					
+						log('tag ' + oTag  + ' is not closed properly: "' + template.substring(0, cIndex + 1) + '"\n' + original);
+						template = template.replace(oTag, '');
+						continue;
+					}
+					
+					substring = template.substring(index + oTag.length, cTagIndex);
+					template = template.replace(template.substring(0, cTagIndex + cTag.length), '');
+					
+					switch(tag) {
+					
+						case 'if':
+						case 'defined':
+						case 'empty':
+						case 'not-empty':
+
+							code += glue + 'conditional([' + substring.split(options.begin + 'else:' + name + options.end).map(function (v) { return quote(v) }) + '],' + quote(tag, name) + ',data,options,modifiers,_filters' + (filters && filters.length > 0 ? ',[' + filters + ']' : '') + ')';
+							break;
+							
+						case 'loop':
+						case 'repeat':
+						
+							code += glue + 'iterate(' + quote(substring, tag, name) + ',data,options,modifiers,_filters' + (filters && filters.length > 0 ? ',[' + filters + ']' : '') + ')';
+							break;
+							
+						default:
+						
+							code += glue + 'custom(' + quote(tag, name, substring) + ', modifiers, _filters, data, options,modifiers,_filters' + (filters && filters.length > 0 ? ',[' + filters + ']' : '') + ')';
+							break;
+					}
+				}
+			}
+		}
+		
+		while(index != -1 && cIndex != -1);
+		
+		code = (code + glue + quote(template)).replace(/^""\+\n?|"\+\n?"|\+\n?""/mg, '');
+        
+		if(options.debug) log(code);
+		
+		var fn = new Function ('modifiers', '_filters', 'data', 'options', 'compile', 'evaluate', 'nestedeval', 'conditional', 'iterate', 'custom', 'undef', 'return ' + code);
+		
+		return function (modifiers, _filters, data, options) {
+		
+			return fn(modifiers, _filters, data, options, compile, evaluate, nestedeval, conditional, iterate, custom)
+		}
+	}
+	
+	function custom() {
+	
+		var tmp = arguments[6].parse.apply(arguments);
+		
+		return tmp == undef ? '' : tmp;
+	}
+	
+	function evaluate (object, property) {
+
+		var value = typeof object[property] == 'function' ? object[property]() : object[property];
+		
+		return value == undef ? '' : value
+	}
+	
+	function nestedeval (object, paths) {
+	
+		var value = typeof object == 'function' ? object() : object, key, i;
+			
+		for(i = 0; i < paths.length; i++) {
+		
+			key = paths[i];
+			
+			if(value[key] == undef) return '';
+			
+			value = typeof value[key] == 'function' ? value[key]() : value[key]
+		}
+		
+		return value == undef ? '' : value;
+	}
+				
+	function conditional(templates, tag, name, data, options, modifiers, _filters, filters) {
+	
+		var subject = evaluate(data, name), t, i, context, tpl0 = templates[0], tpl1 = templates[1];
+	
+		if(filters) for(i = 0; i < filters.length; i++) subject = filters[i](subject);
+
+		t = test(tag, subject);
+		
+		context = t && tag == 'if' && typeof subject == 'object';
+		
+		//elseif
+		if(tpl1 != undef) {
+
+			//
+			if(!t) return tpl1;
+			
+			else if(context) return compile(tpl1, modifiers, _filters, options)(modifiers, _filters, subject, options);
+			
+			else return compile(tpl0, modifiers, _filters, options)(modifiers, _filters, subject, options)
+		}
+	
+		if(!t) return '';
+
+		else if(context) return compile(tpl0, modifiers, _filters, options)(modifiers, _filters, subject, options);
+		
+		return compile(tpl0, modifiers, _filters, options)(modifiers, _filters, data, options)
+	}
+	
+	function iterate(template, tag, name, data, options, modifiers, _filters, filters) {
+	
+		var html = '', i, values = {},
+			value, 
+			property,
+			single,
+			clean,
+			subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : evaluate(data, name);
+		
+		if(!test(tag, subject)) return '';
+		
+		//iterable - Array or Hash like
+		if(typeof subject.each == 'function')  subject.each(function (value, key) {
+		
+			if(typeof value == 'function') value = value();
+			
+			if(value == undef) return;
+			
+			values[key] = value;
+		}, this);
+		
+		else for(property in subject) if(has(subject, property)) {
+		
+			value = evaluate(subject, property);
+			
+			if(value == undef) continue;
+			
+			values[property] = value;
+		}
+		
+		//apply filters
+		if(filters) for(i = 0; i < filters.length; i++) values = filters[i](values);
+		
+		single = new RegExp(options.begin.escapeRegExp() + '.*?' + options.end.escapeRegExp(), 'g');
+		for(property in values) {
+		
+			if(!has(values, property)) continue;
+			
+			value = values[property];
+			
+			html += 
+					typeof value != 'object' ? template.replace(single, value).replace(clean, '')
+					: 
+					compile(template, modifiers, _filters, options)(modifiers, _filters, value, options);
+		}
+		
+		return html
+	}
+	
+	function test (tag, value) {
+
+		switch(tag) {
+		
+			case 'if':
+			case 'not-empty':
+					return !!value;
+					
+			case 'defined':
+					return value != undef;
+			case 'empty':
+					return !value;
+					
+			case 'loop':
+			case 'repeat':
+					return value != undef && ['object', 'function'].indexOf(typeof value)  != -1;
+		}
+		
+		return true
+	}
+	
+	function quote() { 
+	
+		return Array.flatten(arguments).map(function (string) { 
+			return '"' + ('' + string).replace(/"/g, '\\"').replace(/\n/g, '\\n') + '"' 
+		})
+	}
 	
 	context.Template = new Class({
 
 		options: {
 		
-			debug: true,
+			debug: false,
 			//handle unknown tag
-			parse: function (tag, name, substring, partial/* , filters, string, data, options */) {
+			/**
+				- tag
+				- name
+				- template,
+				- data
+				- options,
+				- modifiers
+				- global filters
+				- local filters
+			*/
+			parse: function (/* tag, name, substring, data, options,modifiers,_filters, filters */) {
 			
-				/* if(options.debug)  */log('unknown template tag: ' + tag, name, partial);
+                var args = Array.slice(arguments);
+				log('unknown template tag: ', args);
 				
-				return substring
+				return args[2]
 			},
 			begin: '{',
 			end: '}'
@@ -42,7 +323,7 @@ provides: [Template]
 		modifiers: {},		
 		initialize: function (options) { 
 		
-			Object.append(this.options, options) 
+			Object.append(this.options, options);
 		},		
 		addFilter: function (name, fn) {
 		
@@ -54,237 +335,33 @@ provides: [Template]
 		},		
 		addModifier: function (name, fn) {
 		
-			if(typeof name == 'object') Object.each(name, function (value, name) { this.modifiers[name] = value }, this);
+			if(typeof name == 'object') Object.each(name, function (value, name) { 
+				
+				this.modifiers[name] = function () {
 			
-			else this.modifiers[name] = fn;
+					var value = fn.apply(null, arguments);
+					
+					return value == undef ? '' : value
+				}
+				
+			}, this);
+			
+			else this.modifiers[name] = function () {
+			
+				var value = fn.apply(null, arguments);
+				
+				return value == undef ? '' : value
+			};
 			
 			return this
 		},		
 		html: function () { return Elements.from(this.substitute.apply(this, arguments)) },		
-		substitute: function (string, data, options) {
+		substitute: function (template, data, options) {
 		
 			options = Object.append({}, this.options, options);
 			
-			var replace = {begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
-				match = new RegExp(('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_\\.-]*)([^' + (['[', ']'].indexOf(options.end) != -1 ? replace.end : replace.end.replace(/\\/g, '')) + ']+)?{end}').substitute(replace), 'i'),
-				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
-			
-			return this.parse(string, replace, match, simplereg, data, options)
-		},		
-		parse: function (string, replace, match, simplereg, data, options) {
-		
-			var matches;
-				
-			if(data != undef) {
-				
-				do {
-					
-					matches = match.exec(string);
-
-					if(matches) {
-						
-						var open,
-							close,
-							index, //index of the first match
-							index2,//index of the last match
-							index3,//index of the {else: ...} match
-							test,
-							context, 
-							elseif,
-							html, 
-							subject,
-							partial,
-							substring,
-							values,
-							i,
-							tag = matches[1],
-							name = matches[2],
-							filters = matches[3] != undef ? matches[3] : '';
-							
-						open = options.begin + tag + ':' + name + filters + options.end;
-						close = options.begin + '/' + tag + ':' + name + options.end;
-						filters = filters == '' ? [] : filters.split(/\s+/g).filter(function (filter) { 
-						
-							var value = has(this.filters, filter);
-							
-							if(options.debug && filter != '' && !value) log('invalid template filter: ' + filter);
-							
-							return value
-						}, this).map(function (value) {
-						
-							return this.filters[value]
-						}, this);
-						
-						index2 = string.indexOf(close);
-						
-						if(index2 == -1) { //
-						
-							if(options.debug && name.indexOf(':') != -1) log('suspicious template token found: "' + open + '", is the closing token missing ?', string);
-							string = string.replace(open, '');
-							continue;
-						}
-						
-						index = string.indexOf(open);
-						
-						substring = string.substring(index + open.length, index2);
-						partial = open + substring + close;
-						
-						switch(tag) {
-
-							case 'if':
-							case 'defined':
-							case 'empty':
-							case 'not-empty':
-
-									//switch context for object or array
-									subject = this.evaluate(data, name);
-									
-									//apply filters
-									for(i = 0; i < filters.length; i++) subject = filters[i](subject)
-									
-									test = this.test(tag, subject);
-									
-									context = test && tag == 'if' && typeof subject == 'object';
-									elseif = options.begin + 'else:' + name + options.end;
-									
-									//if-else or something like that
-									index3 = string.indexOf(elseif);
-									
-									if(index3 != -1) {
-
-										if(!test) string = string.replace(partial, this.parse(string.substring(index3 + elseif.length, index2), replace, match, simplereg, data, options));
-
-										else if(context) string = string.replace(partial, this.parse(string.substring(index3 + elseif.length, index2), replace, match, simplereg, subject, options));
-										else string = string.replace(partial, this.parse(string.substring(index + open.length, index3), replace, match, simplereg, data, options));
-									}
-									
-									else {
-									
-										if(!test) string = string.replace(partial, '');
-
-										else if(context) string = string.replace(partial, this.parse(substring, replace, match, simplereg, subject, options));
-										else string = this.parse(string.replace(partial, this.parse(substring, replace, match, simplereg, data, options)), replace, match, simplereg, data, options);
-									}
-									
-								break;
-								
-							case 'repeat':
-							case 'loop':
-								
-								html = '';
-								values = {};
-								subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : this.evaluate(data, name);
-								
-								if(!this.test(tag, subject)) string = string.replace(partial, '');
-								
-								else {
-									
-									var value, property, single = new RegExp(options.begin.escapeRegExp() + '\.' + options.end.escapeRegExp(), 'g');
-									
-									//iterable - Array or Hash like
-									if(typeof subject.each == 'function')  subject.each(function (value, key) {
-									
-										if(typeof value == 'function') value = value();
-										
-										if(value == undef) return;
-										
-										values[key] = value;
-									}, this);
-									
-									else for(property in subject) if(has(subject, property)) {
-									
-										value = this.evaluate(subject, property);
-										
-										if(value == undef) continue;
-										
-										values[property] = value;
-									}
-									
-									//apply filters
-									for(i = 0; i < filters.length; i++) values = filters[i](values);
-									
-									Object.each(values, function (value) { html += typeof value != 'object' ? substring.replace(single, value) : this.parse(substring, replace, match, simplereg, value, options) }, this);
-									string = string.replace(partial, html)
-								}
-								
-								break;
-
-							default: 
-							
-								var tmp = options.parse(tag, name, substring, partial, filters, string, data, options);
-								
-								string = string.replace(partial, tmp == undef ? '' : tmp);
-								break;
-						}
-					}
-				}
-				
-				while(matches)
-			}
-			
-			return string.replace(simplereg, function(match, name) {
-			
-				if (match.charAt(0) == '\\') return match.slice(1);
-				
-				var value = this.evaluate(data, name);
-				
-				return value == undef ? '' : value
-				
-			}.bind(this))
-		},	
-		test: function (tag, value) {
-
-			switch(tag) {
-			
-				case 'if':
-				case 'not-empty':
-						return !!value;
-						
-				case 'defined':
-						return value != undef;
-				case 'empty':
-						return !value;
-						
-				case 'loop':
-				case 'repeat':
-						return value != undef && ['object', 'function'].indexOf(typeof value)  != -1;
-			}
-			
-			return true
-		},		
-		evaluate: function (object, property) {
-		
-			if(object == undef) return undef;
-			
-			//apply modifier without arguments
-			if(this.modifiers[property] != undef) return this.modifiers[property](object);
-			
-			//apply modifier with arguments
-			if(property.indexOf(' ') != -1) {
-			
-				var args = property.split(/\s+/), name = args.shift();
-				
-				if(this.modifiers[name] != undef) return this.modifiers[name].apply(null, [object].append(args))
-			}
-			
-			if(property.indexOf('.') != -1) {
-			
-				var value = typeof object == 'function' ? object() : object, paths = property.split('.'), key, i;
-				
-				for(i = 0; i < paths.length; i++) {
-				
-					key = paths[i];
-					
-					if(value[key] == undef) return undef;
-					
-					value = typeof value[key] == 'function' ? value[key]() : value[key]
-				}
-				
-				return value
-			}
-			
-			return typeof object[property] == 'function' ? object[property]() : object[property]
-		}
+			return compile(template, this.modifiers, this.filters, options)(this.modifiers, this.filters, data, options)
+		}	
 	})
 
 }(this);

@@ -14,7 +14,7 @@
 	
 		return '"' + data.name + ' ' + data.lastname + '"'
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'}))
+	}).substitute(template, {name: 'Bob', lastname: 'Malone'}, {debug: true}))
 	
 	//passing arguments to the modifier
 	template = 'Hi, my name is {fullname lowercase}';
@@ -24,7 +24,7 @@
 		if(transform == 'lowercase') return '"' + data.name.toLowerCase() + ' ' + data.lastname.toLowerCase() + '"'
 		return '"' + data.name + ' ' + data.lastname + '"'
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'}))
+	}).substitute(template, {name: 'Bob', lastname: 'Malone'}, {debug: true}))
 	
 	//passing arguments to the modifier
 	template = 'Hi, my name is {fullname uppercase somethingelse}';
@@ -35,7 +35,7 @@
 		if(transform == 'uppercase') return '"' + data.name.toUpperCase() + ' ' + data.lastname.toUpperCase() + '"'
 		return '"' + data.name + ' ' + data.lastname + '"'
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'}))
+	}).substitute(template, {name: 'Bob', lastname: 'Malone'}, {debug: true}))
 	
 	//convert size to file size.
 	
@@ -58,7 +58,7 @@
 	
 		return (+data[property]).toFileSize()
 		
-	}).substitute(template, {name: 'Bob.jpg', size: 14578559})) // -> File: "Bob.jpg", size: 13.90 MB 
+	}).substitute(template, {name: 'Bob.jpg', size: 14578559}, {debug: true})) // -> File: "Bob.jpg", size: 13.90 MB 
 	
 </script>
 </body></html>

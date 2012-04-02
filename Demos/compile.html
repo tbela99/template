@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<script type="text/javascript" src="../mootools.js"></script>
+<script type="text/javascript" src="../Source/Template.js"></script>
+</head><body>
+
+<script type="text/javascript">
+
+	var template = '\\{dummy} {title} spends {calc} on {products.0}';
+	
+    var view = {
+      title: "Joe",
+      calc: function() {
+        return 2 + 4;
+      },
+	  products: ['tomatoes']
+    };
+
+	document.body.appendText(new Template().substitute(template, view));
+	
+	template = '\\[[dummy]] [[title]] spends [[calc]] on [[products.0]]';
+	
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, view, {begin: '[[', end: ']]'}));
+	
+	
+	document.body.grab(new Element('br')).appendText(new Template().substitute('{title} spend {calc}. this is a {loop:} broken template \\{loop:} {loop:}', view));
+	
+	
+	template = 'Hi, my name is {name}{if:age}, I am {age}{/if:age}.';
+	
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, {name: 'Bob'})); // -> Hi, my name is Bob
+	
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, {name: 'Bob', age: function () { return 11 }}, {cache: false})) // -> Hi, my name is Bob, I am 11
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, {name: 'Bob', age: function () { return 11 }})) // -> Hi, my name is Bob, I am 11
+	
+	template = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>.{/if:kids}<br/>';
+	
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, {name: 'Martina'})).grab(new Element('br')); // -> Hi, my name is Martina
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']})).grab(new Element('br')) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, {name: 'Martina'}, {cache: false})).grab(new Element('br')); // -> Hi, my name is Martina
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']})) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	
+	
+	view = {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']};
+	template = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop: reverse}<li>{.}</li>{/loop:}</ul>.{/if:kids}<br/>';
+	
+	document.body.grab(new Element('br')).appendText(new Template().substitute(template, view)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	
+	view = data = {name: 'Emily', kids: [{name: 'Brian', sex: 'M'}, {name: 'Edith', sex: 'F'}, {name: 'Spider man', sex: 'M'}]};
+	template = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>.{/if:kids}<br/>';
+	
+	/*
+	document.body.grab(new Element('br')).appendText(new Template().addFilter('reverse', function (data) {
+	
+		var values = [];
+		
+		Object.each(data, function (value) { values.unshift(value) });
+		
+		return values
+		
+	}).
+	substitute(template, view)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	*/
+</script>
+</body></html>
