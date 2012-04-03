@@ -72,7 +72,31 @@ describe("Template test", function() {
 			
 		}).substitute('<ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>', [{name: 'Brian', sex: 'M'}, {name: 'Edith', sex: 'F'}, {name: 'Spider man', sex: 'M'}])).
 			toEqual('<ul><li>Spider man</li><li>Edith</li><li>Brian</li></ul>')
-	})
+	});
+    it("Filter Hi, my name is {name}.{if:kids girls} I have {length} girl.{/if:kids}.{if:kids boys} I have {length} boys.{/if:kids}<br/>", function() {
+      
+      expect(new Template().addFilter({girls: function (data) {
+	
+			var values = [];
+			
+			Object.each(data, function (value) { if(value.sex == 'F') values.unshift(value) });
+			
+			return values
+			
+		},
+		boys: function (data) {
+		
+			var values = [];
+			
+			Object.each(data, function (value) { if(value.sex == 'M') values.push(value) });
+			
+			return values
+			
+		}
+	}).substitute(' Hi, my name is {name}.{if:kids girls} I have {length} girl{/if:kids}.{if:kids boys} I have {length} boys.{/if:kids}<br/>', 
+		{name: 'Emily', kids: [{name: 'Brian', sex: 'M'}, {name: 'Edith', sex: 'F'}, {name: 'Spider man', sex: 'M'}]})).
+		toEqual(' Hi, my name is Emily. I have 1 girl. I have 2 boys.<br/>')
+	});
   });
 	
 	
@@ -103,10 +127,8 @@ describe("Template test", function() {
     })
   });
 	
-
   describe("Custom token delimiter", function() {
   
-	
     it("Custom tags {{title}} spends {{calc}}", function() {
       
       expect(new Template().substitute('{{title}} spends {{calc}}', {
@@ -133,6 +155,19 @@ describe("Template test", function() {
 		begin: '[[',
 		end: ']]'
 	  })).toEqual("Joe spends 6");
+    })
+  });
+	
+  describe("Unknown token", function() {
+  
+    it("{lambda:nil}some text{/lambda:nil}", function() {
+      
+      expect(new Template().substitute('{lambda:nil}some text{/lambda:nil}', {
+		  title: "Joe",
+		  calc: function() {
+			return 2 + 4;
+		  }
+	  })).toEqual("some text");
     })
   })
 	

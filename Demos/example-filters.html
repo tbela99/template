@@ -11,6 +11,7 @@
 	var tmpl = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>.{/if:kids}<br/>',
 		data = {name: 'Emily', kids: [{name: 'Brian', sex: 'M'}, {name: 'Edith', sex: 'F'}, {name: 'Spider man', sex: 'M'}]};
 	
+	
 	document.body.appendText(new Template().addFilter({
 	
 			multiply2: function(data) { 
@@ -67,7 +68,7 @@
 			return values
 			
 		}
-	}).substitute(' Hi, my name is {name}.{if:kids girls} I have {length} girls.{/if:kids}.{if:kids boys} I have {length} boys.{/if:kids}<br/>', data)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	}).substitute(' Hi, my name is {name}.{if:kids girls} I have {length} girl{/if:kids}.{if:kids boys} I have {length} boys.{/if:kids}<br/>', data)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
 	
 </script>
 </body></html>

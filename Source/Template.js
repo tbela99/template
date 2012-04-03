@@ -19,15 +19,97 @@ provides: [Template]
 
 "use strict";
 
+	var log = (function () { return context.console && console.log ? function () { console.log.apply(console, arguments) } : function () { } })(),
+		cache = {}, 
+		slice = Array.slice,
+		Object = context.Object,
+		//vanilla js
+		Template = context.Template = function () {},
+		prop,
+		options = {
+
+				options: {
+				
+					debug: false,
+					//handle unknown tag
+					/**
+						- tag
+						- name
+						- template,
+						- data
+						- options,
+						- modifiers
+						- global filters
+						- local filters
+					*/
+					parse: function (/* tag, name, substring, data, options,modifiers,_filters, filters */) {
+					
+						var args = slice(arguments);
+						log('unknown template tag: ', args);
+						
+						return args[2]
+					},
+					begin: '{',
+					end: '}'
+				},		
+				filters: {},
+				modifiers: {},		
+				initialize: function (options) { 
+				
+					Object.append(this.options, options);
+				},		
+				addFilter: function (name, fn) {
+				
+					if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
+					
+					else this.filters[name] = fn;
+					
+					return this
+				},		
+				addModifier: function (name, fn) {
+				
+					if(typeof name == 'object') Object.each(name, function (value, name) { 
+						
+						this.modifiers[name] = function () {
+					
+							var value = fn.apply(null, arguments);
+							
+							return value == undef ? '' : value
+						}
+						
+					}, this);
+					
+					else this.modifiers[name] = function () {
+					
+						var value = fn.apply(null, arguments);
+						
+						return value == undef ? '' : value
+					};
+					
+					return this
+				},		
+				html: function () { return Elements.from(this.substitute.apply(this, arguments)) },		
+				substitute: function (template, data, options) {
+				
+					options = Object.append({}, this.options, options);
+					
+					return compile(template, this.modifiers, this.filters, options)(this.modifiers, this.filters, data, options)
+				}	
+			};
+
+	Template.prototype = function (options) {
+
+		if(options.initialize) options.initialize.apply(this, options)
+	};
+
+	for(prop in options) if(has(options, prop)) Template.prototype[prop] = options[prop]
+
 	function has(object, property) { return Object.prototype.hasOwnProperty.call(object, property) }
 	
-	var log = (function () { return context.console && console.log ? function () { console.log.apply(console, arguments) } : function () { } })(),
-		cache = {};
-		
 	//the idea is to return template token + self evaluated js
 	function compile(template, modifiers, _filters, options) {
 	
-		if(cache[template]) return cache[template];
+		if(options.cache !== false && cache[template]) return cache[template];
 		
 		cache[template] = parse(template, modifiers, _filters, options);
 		
@@ -97,7 +179,12 @@ provides: [Template]
 					
 					filters = match.split(':');
 					tag = filters.shift();
-					name = filters[0].charAt(0) == ' ' ? '' : filters.shift();
+					if(filters[0].charAt(0) == ' ') name = '';
+					else {
+					
+						filters = filters.join(' ').split(' ');
+						name = filters.shift();
+					}
 					
 					if(filters.length > 0) filters = filters.join(' ').split(' ').filter(function (filter) { return _filters[filter] }).map(function (filter) { return _filters[filter] })
 					
@@ -109,7 +196,7 @@ provides: [Template]
 					
 					if(cTagIndex == -1) {
 					
-						log('tag ' + oTag  + ' is not closed properly: "' + template.substring(0, cIndex + 1) + '"\n' + original);
+						log('token ' + oTag  + ' is not closed properly: "' + template.substring(0, cIndex + 1) + '"\n' + original);
 						template = template.replace(oTag, '');
 						continue;
 					}
@@ -158,7 +245,8 @@ provides: [Template]
 	
 	function custom() {
 	
-		var tmp = arguments[6].parse.apply(arguments);
+		var args = slice(arguments),
+			tmp = args[6].parse.apply(undef, args);
 		
 		return tmp == undef ? '' : tmp;
 	}
@@ -291,75 +379,4 @@ provides: [Template]
 		})
 	}
 	
-	context.Template = new Class({
-
-		options: {
-		
-			debug: false,
-			//handle unknown tag
-			/**
-				- tag
-				- name
-				- template,
-				- data
-				- options,
-				- modifiers
-				- global filters
-				- local filters
-			*/
-			parse: function (/* tag, name, substring, data, options,modifiers,_filters, filters */) {
-			
-                var args = Array.slice(arguments);
-				log('unknown template tag: ', args);
-				
-				return args[2]
-			},
-			begin: '{',
-			end: '}'
-		},		
-		filters: {},
-		modifiers: {},		
-		initialize: function (options) { 
-		
-			Object.append(this.options, options);
-		},		
-		addFilter: function (name, fn) {
-		
-			if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
-			
-			else this.filters[name] = fn;
-			
-			return this
-		},		
-		addModifier: function (name, fn) {
-		
-			if(typeof name == 'object') Object.each(name, function (value, name) { 
-				
-				this.modifiers[name] = function () {
-			
-					var value = fn.apply(null, arguments);
-					
-					return value == undef ? '' : value
-				}
-				
-			}, this);
-			
-			else this.modifiers[name] = function () {
-			
-				var value = fn.apply(null, arguments);
-				
-				return value == undef ? '' : value
-			};
-			
-			return this
-		},		
-		html: function () { return Elements.from(this.substitute.apply(this, arguments)) },		
-		substitute: function (template, data, options) {
-		
-			options = Object.append({}, this.options, options);
-			
-			return compile(template, this.modifiers, this.filters, options)(this.modifiers, this.filters, data, options)
-		}	
-	})
-
-}(this);
+}(this, null);
