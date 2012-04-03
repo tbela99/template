@@ -2,8 +2,9 @@ Template
 ============
 
 Template is fast and context aware template engine with conditional replacement, iterations and filters.
-[Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
-[Compare to Mustache.js](http://jsperf.com/template-mustachejs)
+
+- [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
+- [Compare to Mustache.js](http://jsperf.com/template-mustachejs)
 
 How to use
 ---------------------

@@ -31,7 +31,8 @@
   <section id="prep-code">
     <h2>Preparation code</h2>
     <pre><code>
-  var template = new Template();
+  var template = new Template(),
+		template2 = new Template2();
   
     var view = {
       title: "Joe",
@@ -41,11 +42,6 @@
     };
 
 	</code></pre>
-  </section>
-
-  <section>
-    <h2>Preparation code output</h2>
-    <p>Foo!</p>
   </section>
 
   <section id="runner">
@@ -82,7 +78,7 @@
         <th scope="row" id="title-1"><div>Old implementation</div></th>
         <td>
         <pre><code>
-		template.substitute2('{title} spends {calc}', view)</code></pre>
+		template2.substitute('{title} spends {calc}', view)</code></pre>
         </td>
         <td id="results-1" class="results"></td>
       </tr>
@@ -164,7 +160,8 @@
   ui.browserscope.key = 'agt1YS1wcm9maWxlcnINCxIEVGVzdBjTlbUIDA';
   ui.browserscope.selector = '#bs-results';
 
-  var template = new Template();
+  var template = new Template(),
+		template2 = new Template2();
   
     var view = {
       title: "Joe",
@@ -175,7 +172,7 @@
 
   ui.add('Old implementation', function() {
   
-		template.substitute2('{title} spends {calc}', view)
+		template2.substitute('{title} spends {calc}', view)
   }).add('Current implementation', function() {
   
 		template.substitute('{title} spends {calc}', view)

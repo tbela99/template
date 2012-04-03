@@ -52,7 +52,6 @@
 	view = data = {name: 'Emily', kids: [{name: 'Brian', sex: 'M'}, {name: 'Edith', sex: 'F'}, {name: 'Spider man', sex: 'M'}]};
 	template = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>.{/if:kids}<br/>';
 	
-	/*
 	document.body.grab(new Element('br')).appendText(new Template().addFilter('reverse', function (data) {
 	
 		var values = [];
@@ -63,6 +62,6 @@
 		
 	}).
 	substitute(template, view)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
-	*/
+	
 </script>
 </body></html>
