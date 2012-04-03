@@ -407,7 +407,7 @@ allow you to handle string remplacement with a custom function. this function ac
 - property - (*string*) property name.
 	
 Known Issues:
-----------------
+-------------
 
 The template should not contain identical nested tag/property tokens because this will lead to unpredictable result. this is because the first token will always match the closest matching token.
 this template for example is not valid: '{repeat:name} {repeat:names}{whatevergoeshere} {/repeat:names} {/repeat:names}'
