@@ -4,7 +4,7 @@ Template
 Template is fast and context aware template engine with conditional replacement, iterations and filters.
 
 - [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
-- [Compare to Mustache.js](http://jsperf.com/template-mustachejs/5)
+- [Compare to Mustache.js](http://jsperf.com/template-mustachejs/6)
 
 How to use
 ---------------------
@@ -69,7 +69,7 @@ Substitution is driven by tags that defined which action will be taken and wheth
 	
 ## Example 4 {#Tag:example-filters}
 
-	var	template = new Template().addFilters({reverse: function (data) {
+	var	template = new Template().addFilter({reverse: function (data) {
 	
 				var values = [];
 				
@@ -228,12 +228,12 @@ Syntax: {loop:} match1{/loop:}
 
 - tag - (*string*) tag name
 - name - (*string*) property name
-- substring - (*string*) string
-- partial - (*string*) string
-- filters - (*array*) array of filters
-- string - (*string*) current context string
+- template - (*string*)
 - data - (*mixed*) current context
-- options - (*options*) this instance options
+- options - (*object*) this instance options
+- modifiers - (*object*) hash of all modifiers
+- _filters - (*object*) hash of all filters
+- filters - (*object*) hash of filters that will be applied to the current context
 
 Template Method: substitute 
 --------------------
@@ -280,7 +280,7 @@ substitute the given object into the given template string and return DOM nodes.
 - options - (*object*, optional) override some of the template instance options.
 	
 
-Template Method: addFilters 
+Template Method: addFilter 
 --------------------
 
 allow you to alter the data actually replaced in a given tag. this function accepts either a property name/function or an object with properties names as keys and functions as values.
@@ -291,7 +291,7 @@ you can apply multiple filter to a tag, they must be separed by one or many spac
 	var template = new Template();
 	
 	//syntax #1
-	template.addFilters('filter', function (data) {
+	template.addFilter('filter', function (data) {
 	
 		values = [];
 		
@@ -301,7 +301,7 @@ you can apply multiple filter to a tag, they must be separed by one or many spac
 	});
 	
 	//syntax #2
-	template.addFilters({
+	template.addFilter({
 	
 		odd: function (data) {
 		
@@ -319,7 +319,7 @@ you can apply multiple filter to a tag, they must be separed by one or many spac
 
 ### Example:
 
-	var	template = new Template().addFilters({reverse: function (data) {
+	var	template = new Template().addFilter({reverse: function (data) {
 	
 				var values = [];
 				

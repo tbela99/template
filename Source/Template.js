@@ -23,86 +23,82 @@ provides: [Template]
 		cache = {}, 
 		slice = Array.slice,
 		Object = context.Object,
-		//vanilla js
-		Template = context.Template = function () {},
-		prop,
-		options = {
+		Template = context.Template = function (options) { 
+		
+			this.initialize(options); 
+			return this
+		};
 
-				options: {
+	Template.prototype = {
+
+		options: {
+		
+			debug: false,
+			//handle unknown tag
+			/**
+				- tag
+				- name
+				- template,
+				- data
+				- options,
+				- modifiers
+				- global filters
+				- local filters
+			*/
+			parse: function (/* tag, name, substring, data, options,modifiers,_filters, filters */) {
+			
+				var args = slice(arguments);
+				log('unknown template tag: ', args);
 				
-					debug: false,
-					//handle unknown tag
-					/**
-						- tag
-						- name
-						- template,
-						- data
-						- options,
-						- modifiers
-						- global filters
-						- local filters
-					*/
-					parse: function (/* tag, name, substring, data, options,modifiers,_filters, filters */) {
-					
-						var args = slice(arguments);
-						log('unknown template tag: ', args);
-						
-						return args[2]
-					},
-					begin: '{',
-					end: '}'
-				},		
-				filters: {},
-				modifiers: {},		
-				initialize: function (options) { 
+				return args[2]
+			},
+			begin: '{',
+			end: '}'
+		},		
+		filters: {},
+		modifiers: {},		
+		initialize: function (options) { 
+		
+			Object.append(this.options, options);
+		},		
+		addFilter: function (name, fn) {
+		
+			if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
+			
+			else this.filters[name] = fn;
+			
+			return this
+		},		
+		addModifier: function (name, fn) {
+		
+			if(typeof name == 'object') Object.each(name, function (value, name) { 
 				
-					Object.append(this.options, options);
-				},		
-				addFilter: function (name, fn) {
+				this.modifiers[name] = function () {
+			
+					var value = fn.apply(undef, arguments);
+					
+					return value == undef ? '' : value
+				}
 				
-					if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
-					
-					else this.filters[name] = fn;
-					
-					return this
-				},		
-				addModifier: function (name, fn) {
+			}, this);
+			
+			else this.modifiers[name] = function () {
+			
+				var value = fn.apply(undef, arguments);
 				
-					if(typeof name == 'object') Object.each(name, function (value, name) { 
-						
-						this.modifiers[name] = function () {
-					
-							var value = fn.apply(null, arguments);
-							
-							return value == undef ? '' : value
-						}
-						
-					}, this);
-					
-					else this.modifiers[name] = function () {
-					
-						var value = fn.apply(null, arguments);
-						
-						return value == undef ? '' : value
-					};
-					
-					return this
-				},		
-				html: function () { return Elements.from(this.substitute.apply(this, arguments)) },		
-				substitute: function (template, data, options) {
-				
-					options = Object.append({}, this.options, options);
-					
-					return compile(template, this.modifiers, this.filters, options)(this.modifiers, this.filters, data, options)
-				}	
+				return value == undef ? '' : value
 			};
-
-	Template.prototype = function (options) {
-
-		if(options.initialize) options.initialize.apply(this, options)
+			
+			return this
+		},		
+		html: function () { return Elements.from(this.substitute.apply(this, arguments)) },		
+		substitute: function (template, data, options) {
+		
+			options = Object.append({}, this.options, options);
+			
+			return compile(template, this.modifiers, this.filters, options)(this.modifiers, this.filters, data, options)
+		}	
 	};
-
-	for(prop in options) if(has(options, prop)) Template.prototype[prop] = options[prop]
 
 	function has(object, property) { return Object.prototype.hasOwnProperty.call(object, property) }
 	
@@ -251,14 +247,14 @@ provides: [Template]
 		return tmp == undef ? '' : tmp;
 	}
 	
-	function evaluate (object, property) {
+	function evaluate (object, property, raw) {
 
 		var value = typeof object[property] == 'function' ? object[property]() : object[property];
 		
-		return value == undef ? '' : value
+		return raw || value != undef ? value : ''
 	}
 	
-	function nestedeval (object, paths) {
+	function nestedeval (object, paths, raw) {
 	
 		var value = typeof object == 'function' ? object() : object, key, i;
 			
@@ -266,17 +262,17 @@ provides: [Template]
 		
 			key = paths[i];
 			
-			if(value[key] == undef) return '';
+			if(value[key] == undef) return raw ? undef : '';
 			
 			value = typeof value[key] == 'function' ? value[key]() : value[key]
 		}
 		
-		return value == undef ? '' : value;
+		return raw || value != undef ? value : '';
 	}
 				
 	function conditional(templates, tag, name, data, options, modifiers, _filters, filters) {
 	
-		var subject = evaluate(data, name), t, i, context, tpl0 = templates[0], tpl1 = templates[1];
+		var subject = name.indexOf('.') == -1 ? evaluate(data, name, true) : nestedeval(data, name.split('.'), true), t, i, context, tpl0 = templates[0], tpl1 = templates[1];
 	
 		if(filters) for(i = 0; i < filters.length; i++) subject = filters[i](subject);
 
@@ -288,7 +284,7 @@ provides: [Template]
 		if(tpl1 != undef) {
 
 			//
-			if(!t) return tpl1;
+			if(!t) return compile(tpl1, modifiers, _filters, options)(modifiers, _filters, data, options);
 			
 			else if(context) return compile(tpl1, modifiers, _filters, options)(modifiers, _filters, subject, options);
 			
@@ -308,13 +304,12 @@ provides: [Template]
 			value, 
 			property,
 			single,
-			clean,
-			subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : evaluate(data, name);
+			simple,
+			subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : (name.indexOf('.') == -1 ? evaluate(data, name) : nestedeval(data, name.split('.')));
 		
 		if(!test(tag, subject)) return '';
 		
-		//iterable - Array or Hash like
-		if(typeof subject.each == 'function')  subject.each(function (value, key) {
+		Object.each(subject, function (value, key) {
 		
 			if(typeof value == 'function') value = value();
 			
@@ -323,19 +318,12 @@ provides: [Template]
 			values[key] = value;
 		}, this);
 		
-		else for(property in subject) if(has(subject, property)) {
-		
-			value = evaluate(subject, property);
-			
-			if(value == undef) continue;
-			
-			values[property] = value;
-		}
-		
 		//apply filters
 		if(filters) for(i = 0; i < filters.length; i++) values = filters[i](values);
 		
-		single = new RegExp(options.begin.escapeRegExp() + '.*?' + options.end.escapeRegExp(), 'g');
+		single = new RegExp('\\\\?' + options.begin.escapeRegExp() + '(.*?)' + options.end.escapeRegExp(), 'g');
+		simple = options.begin + '.' + options.end;
+		
 		for(property in values) {
 		
 			if(!has(values, property)) continue;
@@ -343,7 +331,12 @@ provides: [Template]
 			value = values[property];
 			
 			html += 
-					typeof value != 'object' ? template.replace(single, value).replace(clean, '')
+					typeof value != 'object' ? template.replace(single, function (match) {
+					
+						if(match.charAt(0) == '\\') return match.substring(1);
+						
+						return match == simple ? value : ''
+					})
 					: 
 					compile(template, modifiers, _filters, options)(modifiers, _filters, value, options);
 		}
@@ -366,7 +359,7 @@ provides: [Template]
 					
 			case 'loop':
 			case 'repeat':
-					return value != undef && ['object', 'function'].indexOf(typeof value)  != -1;
+					return typeof (typeof value == 'function' ? value() : value)  == 'object';
 		}
 		
 		return true

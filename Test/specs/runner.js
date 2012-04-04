@@ -100,12 +100,136 @@ describe("Template test", function() {
   });
 	
 	
+  describe("Conditional replacement", function() {
+  
+	describe("{if}", function() {
+		
+		it("Conditional {if} with no context", function() {
+				
+		  expect(new Template().substitute('{if:0} {0}{/if:0}', [1, 2, 3, 4])).
+			toEqual(' 1');
+		});
+		
+		it("Conditional {if} with context {if:0} {number}{/if:0}", function() {
+				
+		  expect(new Template().substitute('{if:0} {number}{/if:0}', [{number: 1}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' 1');
+		});
+		
+		it("Conditional {if} with nested context {if:0.user} {name}{/if:0.user}", function() {
+				
+		  expect(new Template().substitute('{if:0.user} {name}{/if:0.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+		
+		it("Conditional {if-else} with no context", function() {
+				
+		  expect(new Template().substitute('{if:10} {0}{else:10} {0}{/if:10}', [1, 2, 3, 4])).
+			toEqual(' 1');
+		});
+		
+		it("Conditional {if-else} with context {if:10}10{else:10} {0.number}{/if:10}", function() {
+				
+		  expect(new Template().substitute('{if:0} {number}{/if:0}', [{number: 1}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' 1');
+		});
+		
+		it("Conditional {if-else} with nested context {if:1.user}{name} {else:1.user} {0.user.name}{/if:1.user}", function() {
+				
+		  expect(new Template().substitute('{if:0.user} {name}{/if:0.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+	});
+	
+	describe("{defined}", function() {
+		
+		it("Conditional {defined} with nested context {defined:0.user} {0.user.name}{/defined:0.user}", function() {
+				
+		  expect(new Template().substitute('{defined:0.user} {0.user.name}{/defined:0.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+		
+		it("Conditional {defined} with nested context is false", function() {
+				
+		  expect(new Template().substitute('{defined:1.user} {0.user.name}{/defined:1.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual('');
+		})
+	});
+	
+	describe("{empty}", function() {
+		
+		it("Conditional {empty} with nested context is true", function() {
+				
+		  expect(new Template().substitute('{empty:1.user} {0.user.name}{/empty:1.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+		
+		it("Conditional {empty} with nested context is false", function() {
+				
+		  expect(new Template().substitute('{empty:0.user} {0.user.name}{/empty:0.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual('');
+		});
+		
+		it("Conditional {empty-else} with nested context is false", function() {
+				
+		  expect(new Template().substitute('{empty:0.user}empty!{else:0.user} {0.user.name}{/empty:0.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+		
+		it("Conditional {empty-else} with nested context is true", function() {
+				
+		  expect(new Template().substitute('{empty:0.user} {0.user.name}{else:0.user} {0.user.name}{/empty:0.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+	});
+	
+	describe("{not-empty}", function() {
+			
+		it("Conditional {not-empty} with nested context is true", function() {
+				
+		  expect(new Template().substitute('{not-empty:0.user} {0.user.name}{/not-empty:0.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+		
+		it("Conditional {not-empty} with nested context is false", function() {
+				
+		  expect(new Template().substitute('{not-empty:1.user} {0.user.name}{/not-empty:1.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual('');
+		});
+		
+		it("Conditional {not-empty-else} with nested context is false", function() {
+				
+		  expect(new Template().substitute('{not-empty:1.user}not empty!{else:1.user} {0.user.name}{/not-empty:1.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' sammy');
+		});
+		
+		it("Conditional {not-empty-else} with nested context is true", function() {
+				
+		  expect(new Template().substitute('{not-empty:1.user} {0.user.name}{else:1.user} {1.number}{/not-empty:1.user}', [{number: 1, user: {name: 'sammy'}}, {number: 2}, {number: 3}, {number: 4}])).
+			toEqual(' 2');
+		});
+	});
+  });
+	
+	
   describe("Iterator", function() {
   
-    it("Iterate with {loop} with context", function() {
+    it("Iterate with {loop} with context (array)", function() {
       		
       expect(new Template().substitute('{loop:} {number}{/loop:}', [{number: 1}, {number: 2}, {number: 3}, {number: 4}])).
 		toEqual(' 1 2 3 4');
+    });
+	
+    it("Iterate with {loop} with context (array) #2", function() {
+      		
+      expect(new Template().substitute('{loop:} {number}\\{name}{/loop:}', [{number: 1}, {number: 2}, {number: 3}, {number: 4}])).
+		toEqual(' 1{name} 2{name} 3{name} 4{name}');
+    });
+	
+    it("Iterate with {loop} with context (object)", function() {
+      		
+      expect(new Template().substitute('{loop:} {.}{/loop:}', {first: 'Jane', last: 'Doe'})).
+		toEqual(' Jane Doe');
     });
 	
     it("Iterate with {loop} without context", function() {
@@ -114,15 +238,44 @@ describe("Template test", function() {
 		toEqual(' 1 2 3 4');
     });
 	
-    it("Iterate with {repeat} with context", function() {
+    it("Iterate with {loop} without context #2", function() {
+      		
+      expect(new Template().substitute('{loop:} {name}{.}{/loop:}', [1, 2, 3, 4])).
+		toEqual(' 1 2 3 4');
+    });
+	
+    it("Iterate with {loop} without context #3", function() {
+      		
+      expect(new Template().substitute('{loop:} \\{name}{.}{/loop:}', [1, 2, 3, 4])).
+		toEqual(' {name}1 {name}2 {name}3 {name}4');
+    });
+	
+    it("Iterate with {repeat} with context (array)", function() {
       		
       expect(new Template().substitute('{repeat:items} {number}{/repeat:items}', {items: [{number: 1}, {number: 2}, {number: 3}, {number: 4}]})).
 		toEqual(' 1 2 3 4');
     });
 	
+    it("Iterate with {repeat} with context (object)", function() {
+      		
+      expect(new Template().substitute('{repeat:items} {.}{/repeat:items}', {items: {first: 'Jane', 'last': 'Doe'}})).
+		toEqual(' Jane Doe');
+    });
+	
+    it("Iterate with {repeat} with nested context", function() {
+      		
+      expect(new Template().substitute('{repeat:items.0.series} {.}{/repeat:items.0.series}', {items: [{number: 1, series: [0, 2, 3, 4]}, {number: 2}, {number: 3}, {number: 4}]})).
+		toEqual(' 0 2 3 4');
+    });
+	
     it("Iterate with {repeat} without context", function() {
       		
       expect(new Template().substitute('{repeat:items} {.}{/repeat:items}', {items: [1, 2, 3, 4]})).
+		toEqual(' 1 2 3 4');
+    });
+    it("Iterate with {repeat} without context #2", function() {
+      		
+      expect(new Template().substitute('{repeat:items} {.}{name}{/repeat:items}', {items: [1, 2, 3, 4]})).
 		toEqual(' 1 2 3 4');
     })
   });
@@ -160,7 +313,7 @@ describe("Template test", function() {
 	
   describe("Unknown token", function() {
   
-    it("{lambda:nil}some text{/lambda:nil}", function() {
+    it("using default parse {lambda:nil}some text{/lambda:nil}", function() {
       
       expect(new Template().substitute('{lambda:nil}some text{/lambda:nil}', {
 		  title: "Joe",
@@ -168,6 +321,33 @@ describe("Template test", function() {
 			return 2 + 4;
 		  }
 	  })).toEqual("some text");
+    });
+	
+    it("using custom parse {lambda:nil}some text{/lambda:nil}", function() {
+      
+      expect(new Template().substitute('{lambda:nil}some text{/lambda:nil}', {
+		  title: "Joe",
+		  calc: function() {
+			return 2 + 4;
+		  }
+	  },
+	  {
+	  
+		parse: function () { return 'Yes!' }
+	  })).toEqual("Yes!")
+    });
+	  
+    it("using custom parse with new Template() {lambda:nil}some text{/lambda:nil}", function() {
+      
+      expect(new Template({
+	  
+		parse: function () { return 'Yes!' }
+	  }).substitute('{lambda:nil}some text{/lambda:nil}', {
+		  title: "Joe",
+		  calc: function() {
+			return 2 + 4;
+		  }
+	  })).toEqual("Yes!")
     })
   })
 	
