@@ -300,6 +300,18 @@ substitute the given object into the given template string and return DOM nodes.
 - options - (*object*, optional) override some of the template instance options.
 	
 
+Template Method: setOptions 
+--------------------
+
+set options.
+
+### Syntax:
+
+	var template = new Template();
+	
+	//syntax #1
+	template.setOptions({begin: '[[', end: ']]'});
+	
 Template Method: addFilter 
 --------------------
 
