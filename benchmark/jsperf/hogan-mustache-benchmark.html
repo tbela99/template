@@ -31,20 +31,30 @@
   <section id="prep-code">
     <h2>Preparation code</h2>
     <pre><code>
-  var template = new Template();
-  var tmpl = '{repeat:mustache} {name}{.}{/repeat:mustache}',
-	render = template.compile(tmpl),
-	data = {mustache: [1, 2, 3, 4]}
-	compiled = Hogan.compile("{{#mustache}} {{name}}{{.}}{{/mustache}}");
 	
-    
-    
 	</code></pre>
   </section>
 
   <section>
     <h2>Preparation code output</h2>
-    <p>Foo!</p>
+    <p>
+	<pre>
+	<code>
+  var template = new Template(),
+	render = template.compile('{title} spends {calc}');
+  
+    var view = {
+      title: "Joe",
+      calc: function() {
+        return 2 + 4;
+      }
+    },
+	compiled = Hogan.compile("{{title}} spends {{calc}}");
+	
+	</pre>
+	</code>
+	
+</p>
   </section>
 
   <section id="runner">
@@ -78,34 +88,37 @@
       </thead>
       <tbody>
       <tr>
-        <th scope="row" id="title-1"><div>New implementation</div></th>
+        <th scope="row" id="title-1"><div>Mustache</div></th>
         <td>
         <pre><code>
-		template.substitute(tmpl, data)</code></pre>
+		
+		Mustache.to_html("{{title}} spends {{calc}}", view)</code></pre>
         </td>
         <td id="results-1" class="results"></td>
       </tr>
       <tr>
-        <th scope="row" id="title-2"><div>Compiled Template</div></th>
+        <th scope="row" id="title-2"><div>Hogan</div></th>
         <td>
         <pre><code>
-		render(data)</code></pre>
+		compiled.render(view)</code></pre>
         </td>
         <td id="results-2" class="results"></td>
       </tr>
       <tr>
-        <th scope="row" id="title-3"><div>Hogan</div></th>
+        <th scope="row" id="title-3"><div>precompiled Template</div></th>
         <td>
         <pre><code>
-		compiled.render(mustache)</code></pre>
+		render(view)
+		</code></pre>
         </td>
         <td id="results-3" class="results"></td>
       </tr>
       <tr>
-        <th scope="row" id="title-4"><div>Mustache</div></th>
+        <th scope="row" id="title-4"><div>Template</div></th>
         <td>
         <pre><code>
-		Mustache.to_html("{{#mustache}} {{name}}{{.}}{{/mustache}}", mustache)</code></pre>
+		template.substitute('{title} spends {calc}', view)
+		</code></pre>
         </td>
         <td id="results-4" class="results"></td>
       </tr>
@@ -181,43 +194,31 @@
   ui.browserscope.key = 'agt1YS1wcm9maWxlcnINCxIEVGVzdBjTlbUIDA';
   ui.browserscope.selector = '#bs-results';
 
-  var template = new Template();
-  var tmpl = '{repeat:mustache} {name}{.}{/repeat:mustache}',
-	render = template.compile(tmpl),
-	data = {mustache: [1, 2, 3, 4]}
-	compiled = Hogan.compile("{{#mustache}} {{name}}{{.}}{{/mustache}}");
+  var template = new Template(),
+	render = template.compile('{title} spends {calc}');
+  
+    var view = {
+      title: "Joe",
+      calc: function() {
+        return 2 + 4;
+      }
+    },
+	compiled = Hogan.compile("{{title}} spends {{calc}}");
 	
-    
-  ui.add('Current implementation', function() {
+	
+  ui.add('Mustache', function() {
   
-		template.substitute(tmpl, data)
-  }).add('Compiled Template', function() {
-  
-		render(data)
+		Mustache.to_html("{{title}} spends {{calc}}", view)
   }).add('Hogan', function() {
   
-		compiled.render(data)
-  }).add('Mustach', function() {
+		compiled.render(view)
+  }).add('precompiled Template', function() {
   
-		Mustache.to_html("{{#mustache}} {{name}}{{.}}{{/mustache}}", data)
+		render(view)
+  }).add('Template', function() {
+  
+		template.substitute('{title} spends {calc}', view)
   })
-  /* 
-  .add('Error', function() {
-    arr.foo(); // unknown method
-  })
-  .add('Just another unrelated test', function() {
-    var x = arr,
-        y = ~~(Math.random() * 100);
-    while (y--) {
-      if (arr[y]) {
-        arr[y];
-      } else {
-	  
-      }
-    }
-  })
-  */;
-
 </script>
 </body>
 </html>

@@ -8,9 +8,13 @@
 
 <script type="text/javascript">
 
-	var template = 'Hi, my name is {name}';
+	var tmpl = 'Hi, my name is {name}',
+		template = new Template();
+		render = template.compile(tmpl),
+		data = {name: 'Bob'};
 	
-	document.body.appendText(new Template().substitute(template, {name: 'Bob'}))
+	document.body.grab(new Element('br')).appendText(template.substitute(tmpl, data));
+	document.body.grab(new Element('br')).appendText(render(data));
 	
 </script>
 </body></html>

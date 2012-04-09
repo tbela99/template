@@ -4,7 +4,7 @@ Template
 Template is fast and context aware template engine with conditional replacement, iterations and filters.
 
 - [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
-- [Compare to Mustache.js](http://jsperf.com/template-mustachejs/6)
+- [Compare to Mustache.js and Hogan.js](http://jsperf.com/template-mustachejs-hogan)
 
 How to use
 ---------------------
@@ -230,10 +230,8 @@ Syntax: {loop:} match1{/loop:}
 - name - (*string*) property name
 - template - (*string*)
 - data - (*mixed*) current context
-- options - (*object*) this instance options
-- modifiers - (*object*) hash of all modifiers
-- _filters - (*object*) hash of all filters
-- filters - (*object*) hash of filters that will be applied to the current context
+- options - (*object*) a mix of template options, filters and modifiers. the filters properties contains all avalaible filters and the modifiers property contains all avalaible modifiers 
+- filters - (*array*) list of filters name data should be applied to data
 
 Template Method: substitute 
 --------------------
@@ -256,6 +254,29 @@ substitute the given object into the given string template.
 - data - (*object*) global context
 - options - (*object*, optional) override some of the template instance options.	
 
+
+Template Method: compile 
+--------------------
+
+compile the given template to a function for optimal performances.
+
+### Syntax:
+
+	var render = new Template().compile(string[, options]);
+	
+	//...
+	string = render(data);
+	
+	document.body.adopt(Elements.from(string));
+
+### Returns:
+
+* (*string*)
+
+### Arguments:
+
+- data - (*object*)
+	
 
 Template Method: html 
 --------------------
@@ -409,5 +430,5 @@ allow you to handle string remplacement with a custom function. this function ac
 Known Issues:
 -------------
 
-The template should not contain identical nested tag/property tokens because this will lead to unpredictable result. this is because the first token will always match the closest matching token.
+The template should not contain identical nested tag/property tokens because this will lead to unpredictable result. this is because the first token will always match the nearest closing match.
 this template for example is not valid: '{repeat:name} {repeat:names}{whatevergoeshere} {/repeat:names} {/repeat:names}'

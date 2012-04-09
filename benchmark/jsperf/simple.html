@@ -31,8 +31,10 @@
   <section id="prep-code">
     <h2>Preparation code</h2>
     <pre><code>
+ 
   var template = new Template(),
-		template2 = new Template2();
+		template2 = new Template2(),
+		render = template.compile('{title} spends {calc}');
   
     var view = {
       title: "Joe",
@@ -89,6 +91,14 @@
 		template.substitute('{title} spends {calc}', view)</code></pre>
         </td>
         <td id="results-2" class="results"></td>
+      </tr>
+      <tr>
+        <th scope="row" id="title-3"><div>Compiled Template</div></th>
+        <td>
+        <pre><code>
+		render(view)</code></pre>
+        </td>
+        <td id="results-3" class="results"></td>
       </tr>
       </tbody>
     </table>
@@ -161,7 +171,8 @@
   ui.browserscope.selector = '#bs-results';
 
   var template = new Template(),
-		template2 = new Template2();
+		template2 = new Template2(),
+		render = template.compile('{title} spends {calc}');
   
     var view = {
       title: "Joe",
@@ -176,6 +187,9 @@
   }).add('Current implementation', function() {
   
 		template.substitute('{title} spends {calc}', view)
+  }).add('Compiled Template', function() {
+  
+		render(view)
   })
   /* 
   .add('Error', function() {

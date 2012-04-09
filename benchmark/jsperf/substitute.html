@@ -35,7 +35,8 @@
     var view = {
       title: "Joe",
       calc: 6
-    };
+    },
+		render = template.compile('{title} spends {calc}');
 
 	</code></pre>
   </section>
@@ -85,6 +86,14 @@
 		template.substitute('{title} spends {calc}', view)</code></pre>
         </td>
         <td id="results-2" class="results"></td>
+      </tr>
+      <tr>
+        <th scope="row" id="title-3"><div>Compiled Template</div></th>
+        <td>
+        <pre><code>
+		render(view)</code></pre>
+        </td>
+        <td id="results-3" class="results"></td>
       </tr>
       </tbody>
     </table>
@@ -156,7 +165,8 @@
   ui.browserscope.key = 'agt1YS1wcm9maWxlcnINCxIEVGVzdBjTlbUIDA';
   ui.browserscope.selector = '#bs-results';
 
-  var template = new Template();
+  var template = new Template(),
+		render = template.compile('{title} spends {calc}');
   
     var view = {
       title: "Joe",
@@ -171,6 +181,9 @@
   }).add('Current implementation', function() {
   
 		template.substitute('{title} spends {calc}', view)
+  }).add('Compiled Template', function() {
+  
+		render(view)
   })
   /* 
   .add('Error', function() {
