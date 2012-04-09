@@ -4,7 +4,7 @@ Template
 Template is fast and context aware template engine with conditional replacement, iterations and filters.
 
 - [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
-- [Compare to Mustache.js and Hogan.js](http://jsperf.com/template-mustachejs-hogan)
+- Compare to Mustache.js and Hogan.js [here](http://jsperf.com/template-mustachejs-hogan) and [here](http://jsperf.com/template-mustachejs-hogan/2)
 
 How to use
 ---------------------
@@ -242,7 +242,7 @@ substitute the given object into the given string template.
 
 	var template = new Template();
 	
-	var output = template.substitute(string, data[, options]);
+	var output = template.substitute(string, data);
 
 ### Returns:
 
@@ -252,7 +252,6 @@ substitute the given object into the given string template.
 
 - string - (*string*) input template
 - data - (*object*) global context
-- options - (*object*, optional) override some of the template instance options.	
 
 
 Template Method: compile 

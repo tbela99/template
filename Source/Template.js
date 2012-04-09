@@ -39,14 +39,20 @@ provides: [Template]
 			this.options = Object.append({}, options);
 			this.hash = Object.values(this.options)
 		},		
+		setOptions: function (options) {
+		
+			if(options) Object.append(this.options, options);
+			this.hash = Object.values(this.options) + Object.values(this.filters) + Object.values(this.modifiers);
+			
+			return this
+		},
 		addFilter: function (name, fn) {
 		
 			if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
 			
 			else this.filters[name] = fn;
 			
-			this.hash = Object.values(this.options) + Object.values(this.filters) + Object.values(this.modifiers);
-			return this
+			return this.setOptions()
 		},		
 		addModifier: function (name, fn) {
 		
@@ -69,26 +75,23 @@ provides: [Template]
 			};
 			
 			this.hash = Object.values(this.options) + Object.values(this.filters) + Object.values(this.modifiers);
-			return this
+			return this.setOptions()
 		},		
 		html: function (template, data, options) { return Elements.from(this.substitute(template, data, options)) },	
 		compile: function (template, options) {
 		
-			if(options != undef || !this.cache[template + this.hash]) {
-				
-				Object.append(this.options, options);
-				this.hash = Object.values(this.options) + Object.values(this.filters) + Object.values(this.modifiers) + Object.values(options || {});
-				options = Object.append({}, this.options, {filters: this.filters, modifiers: this.modifiers});
-			} 
+			if(options && options != this.options) this.setOptions(options);
 			
+			options = Object.append({}, this.options, {filters: this.filters, modifiers: this.modifiers});
 			if(this.cache[template + this.hash]) return this.cache[template + this.hash];
 
 			this.cache[template + this.hash] = compile(template, options || {}, this.hash);
 			return this.cache[template + this.hash];
 		},
-		substitute: function (template, data, options) {
+		substitute: function (template, data) {
 		
-			return this.compile(template, options)(data)
+			if(!this.cache[template + this.hash]) this.compile(template, this.options);
+			return this.cache[template + this.hash](data)
 		}	
 	};
 

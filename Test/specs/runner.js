@@ -284,30 +284,29 @@ describe("Template test", function() {
   
     it("Custom tags {{title}} spends {{calc}}", function() {
       
-      expect(new Template().substitute('{{title}} spends {{calc}}', {
+      expect(new Template({
+		begin: '{{',
+		end: '}}'
+	  }).substitute('{{title}} spends {{calc}}', {
 		  title: "Joe",
 		  calc: function() {
 			return 2 + 4;
 		  }
-	  },
-	  {
-		begin: '{{',
-		end: '}}'
 	  })).toEqual("Joe spends 6");
     });
 	
     it("Custom tags [[title]] spends [[calc]]", function() {
       
-      expect(new Template().substitute('[[title]] spends [[calc]]', {
+      expect(new Template({
+		begin: '[[',
+		end: ']]'
+	  }).substitute('[[title]] spends [[calc]]', {
 		  title: "Joe",
 		  calc: function() {
 			return 2 + 4;
 		  }
-	  },
-	  {
-		begin: '[[',
-		end: ']]'
-	  })).toEqual("Joe spends 6");
+	  }
+	  )).toEqual("Joe spends 6");
     })
   });
 	
@@ -325,20 +324,6 @@ describe("Template test", function() {
 	
     it("using custom parse {lambda:nil}some text{/lambda:nil}", function() {
       
-      expect(new Template().substitute('{lambda:nil}some text{/lambda:nil}', {
-		  title: "Joe",
-		  calc: function() {
-			return 2 + 4;
-		  }
-	  },
-	  {
-	  
-		parse: function () { return 'Yes!' }
-	  })).toEqual("Yes!")
-    });
-	  
-    it("using custom parse with new Template() {lambda:nil}some text{/lambda:nil}", function() {
-      
       expect(new Template({
 	  
 		parse: function () { return 'Yes!' }
@@ -347,9 +332,9 @@ describe("Template test", function() {
 		  calc: function() {
 			return 2 + 4;
 		  }
-	  })).toEqual("Yes!")
+	  }
+	  )).toEqual("Yes!")
     })
   })
-	
 });
   
