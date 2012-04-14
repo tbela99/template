@@ -8,34 +8,31 @@
 
 <script type="text/javascript">
 
-	var template = 'Hi, my name is {fullname}';
-	
-	document.body.grab(new Element('div[html=<strong>#1 modifier with no parameter:</strong> "Hi, my name is {fullname}"]')).appendText(new Template().addModifier('fullname', function (data) {
-	
-		return '"' + data.name + ' ' + data.lastname + '"'
+	var data = {list: [1, 2, 3, 4]},
+		template = new Template();
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'}, {debug: true}))
-	
-	//passing arguments to the modifier
-	template = 'Hi, my name is {fullname lowercase}';
-	
-	document.body.grab(new Element('div[html=<strong>#2 modifier with parameters</strong> "Hi, my name is {fullname lowercase}"]')).appendText(new Template().addModifier('fullname', function (data, transform) {
-	
-		if(transform == 'lowercase') return '"' + data.name.toLowerCase() + ' ' + data.lastname.toLowerCase() + '"'
-		return '"' + data.name + ' ' + data.lastname + '"'
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'}, {debug: true}))
+	template.addModifier('sum', function (data) {
 	
-	//passing arguments to the modifier
-	template = 'Hi, my name is {fullname uppercase somethingelse}';
-	
-	document.body.grab(new Element('div[html=<strong>#2 modifier with parameters</strong> "Hi, my name is {fullname uppercase somethingelse}"]')).appendText(new Template().addModifier('fullname', function (data, transform, somethingelse) {
-	
-		if(window.console && console.log) console.log('somethingelse');
-		if(transform == 'uppercase') return '"' + data.name.toUpperCase() + ' ' + data.lastname.toUpperCase() + '"'
-		return '"' + data.name + ' ' + data.lastname + '"'
+		var sum = 0, i;
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'}, {debug: true}))
+		for(i = 0; i < data.length; i++) if(!isNaN(data[i])) sum += data[i];
+		
+		return sum
+	}).
+	addModifier('product', function (data) {
+	
+		var product = 1, i;
+		
+		for(i = 0; i < data.length; i++) {
+	
+			if(!isNaN(data[i])) product *= data[i];
+		} 
+		
+		return product
+	});
+		
+	document.body.grab(new Element('div', {text: template.substitute('the sum is {sum} and the product is {product}', data.list) })); // -> 4 3 2 1
 	
 	//convert size to file size.
 	
@@ -54,7 +51,7 @@
 	
 	template =  'File: "{name}", size: {toFileSize size}';
 	
-	document.body.grab(new Element('div[html=<strong>#3 modifier with parameters</strong> "File: \"{name}\", size: {toFileSize size}"]')).appendText(new Template().addModifier('toFileSize', function (data, property) {
+	document.body.grab(new Element('br')).grab(new Element('div[html=<strong>#3 modifier with parameters</strong> "File: \"{name}\", size: {toFileSize size}"]')).appendText(new Template().addModifier('toFileSize', function (data, property) {
 	
 		return (+data[property]).toFileSize()
 		

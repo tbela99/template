@@ -8,7 +8,8 @@ authors: [Thierry Bela]
 
 requires: 
   core:1.3: 
-  - Class
+  - Object
+  - Array
   - Elements.from
   
 provides: [Template]
@@ -48,7 +49,7 @@ provides: [Template]
 		},
 		addFilter: function (name, fn) {
 		
-			if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
+			if(typeof name == 'object') Object.append(this.filters, name);
 			
 			else this.filters[name] = fn;
 			
@@ -56,28 +57,14 @@ provides: [Template]
 		},		
 		addModifier: function (name, fn) {
 		
-			if(typeof name == 'object') Object.each(name, function (value, name) { 
-				
-				this.modifiers[name] = function () {
+			if(typeof name == 'object') Object.append(this.modifiers, name);
 			
-					var value = fn.apply(undef, arguments);
-					
-					return value == undef ? '' : value
-				}
-				
-			}, this);
-			
-			else this.modifiers[name] = function () {
-			
-				var value = fn.apply(undef, arguments);
-				
-				return value == undef ? '' : value
-			};
+			else this.modifiers[name] = fn;
 			
 			this.hash = Object.values(this.options) + Object.values(this.filters) + Object.values(this.modifiers);
 			return this.setOptions()
 		},		
-		html: function (template, data, options) { return Elements.from(this.substitute(template, data, options)) },	
+		html: function (template, data) { return Elements.from(this.substitute(template, data)) },	
 		compile: function (template, options) {
 		
 			if(options && options != this.options) this.setOptions(options);
@@ -104,15 +91,15 @@ provides: [Template]
 		return cache[template + hash]
 	}
 	
-	function parse(template, options) {
+	function parse(template, options, hash) {
 	
 		var state = {},
 			fn,
-			result = inline(template, options, [], [], state);
+			result = inline(template, options, hash, [], [], state);
 			
 		if(!state.iterable) {
 		
-			fn = new Function('data','options', 'evaluate', 'nestedeval', 'return ' + result.join('+').replace(/html\+=/g, ''));
+			fn = new Function('data,options,evaluate,nestedeval,tmp,undef', 'return ' + result.join('+').replace(/html\+=/g, ''));
 			return function (data) { return fn(data, options, evaluate, nestedeval) }
 		} 
 	
@@ -124,7 +111,7 @@ provides: [Template]
 		}
 	}
 	
-	function inline(template, options, stack, buffer, state) {
+	function inline(template, options, hash, stack, buffer, state) {
 	
 		var level = stack.length,
 			index,
@@ -179,7 +166,7 @@ provides: [Template]
 					
 					buffer.push('html+=' + quote(string));
 					
-					if(modifiers[name]) buffer.push('html+=' + 'options.modifiers[' + match + '](data' + (filters && filters.length > 0 ? ',' + quote(filters) : '') + ')');
+					if(modifiers[name]) buffer.push('html+=' + '((tmp=options.modifiers[' + match + '](data' + (filters && filters.length > 0 ? ',' + quote(filters) : '') + '))||tmp!=undef?tmp:"")');
 					else buffer.push('html+=' + (stack.length <= 1 ? 'evaluate' : 'nestedeval') + '(data,' + (stack.length <= 1 ? quote(stack) : '[' + quote(stack) + ']') + ')');
 					
 					template = template.replace(string + oTag, '');
@@ -235,7 +222,7 @@ provides: [Template]
 							buffer.push('stack.push(data)',
 										'data=' + (name.length <= 1 ? 'evaluate(data, ' + quote(name) + ',true)' : 'nestedeval(data,[' + quote(name) + '],true)'),
 										'filters=[' + quote(filters) + ']',
-										'html+=conditional([' + quote(substring.split(elseif)) + '],options,test(' + quote(tag) + ',data),' + (tag == 'if' ? 'typeof data == "object"' : 'false') + ',data,stack[stack.length-1],filters)',
+										'html+=conditional([' + quote(substring.split(elseif)) + '],options,' + quote(hash) + ',test(' + quote(tag) + ',data),' + (tag == 'if' ? 'typeof data == "object"' : 'false') + ',data,stack[stack.length-1],filters)',
 										'data=stack.pop()'
 									);
 							break;
@@ -249,17 +236,17 @@ provides: [Template]
 								buffer.push('stack.push(data);data=' + (name.length <= 1 ? 'evaluate(data, ' + quote(name) + ')' : 'nestedeval(data,[' + quote(name) + '])'));
 							}
 						
-							if(filters.length > 0) buffer.push('filters=[' + quote(filters) + ']', 'for(tmp=0;tmp<filters.length;tmp++) data = options.filters[filters[tmp]](data)');
+							if(filters.length > 0) buffer.push('filters=[' + quote(filters) + ']', 'for(tmp=0;tmp<filters.length;tmp++)data=options.filters[filters[tmp]](data)');
 							
-							buffer.push('if(typeof data == "object") html += iterate(' + quote(substring) + ',Object.keys(data), options, data)');
+							buffer.push('if(typeof data == "object") html += iterate(' + quote(substring) + ',Object.keys(data), options,' + quote(hash) + ', data)');
 							if(tag == 'repeat') buffer.push('data=stack.pop()');
 							break;
 							
 						default:
 						
-							buffer.push('tmp = options.parse != undef ? options.parse(' + quote(tag, name, substring) + ',data,options,filters) : ' + quote(substring),
+							buffer.push('tmp=options.parse!=undef?options.parse(' + quote(tag, name, substring) + ',data,options,filters) : ' + quote(substring),
 										'if(options.parse == undef) log("unknown tag: ",' + quote(tag, name, substring, original) + ')',
-										'html+= tmp == undef ? "" : tmp'
+										'html+=tmp==undef?"":tmp'
 									);
 							break;
 					}
@@ -274,22 +261,22 @@ provides: [Template]
 		return buffer.filter(function (string) { return string !== '' && string != '""' });
 	}
 			
-	function conditional(templates, options, test, swap, data, context, filters) {
+	function conditional(templates, options, hash, test, swap, data, context, filters) {
 	
 		var value = templates.length == 2 ? (test && swap ? data : context) : (!test ? undef : (swap ? data : context));
 		
 		if(filters && value != undef) for(var i = 0; i < filters.length; i++) value = options.filters[filters[i]](value);
 		
-		if(templates.length == 2) return compile(templates[!test ? 1 : 0], options)(value);
+		if(templates.length == 2) return compile(templates[!test ? 1 : 0], options, hash)(value);
 		
 		if(!test) return '';
 	
 		return compile(templates[0], options)(value)
 	}
 	
-	function iterate(template, keys, options, data) {
+	function iterate(template, keys, options, hash, data) {
 	
-		var render = compile(template, options),key,html='';
+		var render = compile(template, options, hash),key,html='';
 		
 		for(key = 0; key < keys.length; key++) html += render(evaluate(data,keys[key]))
 			
@@ -328,12 +315,12 @@ provides: [Template]
 		
 			case 'if':
 			case 'not-empty':
-					return !!value;
+					return value != false && value != undef;
 					
 			case 'defined':
 					return value != undef;
 			case 'empty':
-					return !value;
+					return value == false || value == undef;
 					
 			case 'loop':
 			case 'repeat':

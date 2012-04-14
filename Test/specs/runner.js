@@ -39,26 +39,49 @@ describe("Template test", function() {
   });
 	
   describe("Filters and modifiers", function() {
-  
-    it("Modifier ", function() {
-      
-		Number.prototype.toFileSize = function(units) {
-		
-			if(this == 0) return 0;
-			
-			var s = ['bytes', 'kb', 'MB', 'GB', 'TB', 'PB'],
-				e = Math.floor(Math.log(this) / Math.log(1024));
 
-			return (this / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units && units[e] ? units[e] : s[e]);
-		}
+	it("Modifier the sum is {sum} and the product is {product}", function() {
 		
-      expect(new Template().addModifier('toFileSize', function (data, property) {
+		expect(new Template().addModifier('sum', function (data) {
 	
-			return (+data[property]).toFileSize()
+				var sum = 0, i;
+						
+						for(i = 0; i < data.length; i++) if(!isNaN(data[i])) sum += data[i];
+						
+						return sum
+			}).
+			addModifier('product', function (data) {
 			
+				var product = 1, //this should be one but I want to test falsy values get printed correctly
+					i;
+				
+				for(i = 0; i < data.length; i++) if(!isNaN(data[i])) product *= data[i];
+				
+				return product
+			}).substitute('the sum is {sum} and the product is {product}', [1, 2, 3, 4, 0])).
+		toEqual('the sum is 10 and the product is 0');
+	});
+  
+	Number.prototype.toFileSize = function(units) {
+	
+		if(this == 0) return 0;
+		
+		var s = ['bytes', 'kb', 'MB', 'GB', 'TB', 'PB'],
+			e = Math.floor(Math.log(this) / Math.log(1024));
+
+		return (this / Math.pow(1024, Math.floor(e))).toFixed(2) + " " + (units && units[e] ? units[e] : s[e]);
+	}
+	
+	it('Modifier File: "{name}", size: {toFileSize size}', function() {
+				
+		expect(new Template().addModifier('toFileSize', function (data, property) {
+
+			return (+data[property]).toFileSize()
+
 		}).substitute('File: "{name}", size: {toFileSize size}', {name: 'Bob.jpg', size: 14578559})).
 		toEqual('File: "Bob.jpg", size: 13.90 MB');
-    });
+	})
+
 	
     it("Filter <ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>", function() {
       
@@ -73,6 +96,7 @@ describe("Template test", function() {
 		}).substitute('<ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>', [{name: 'Brian', sex: 'M'}, {name: 'Edith', sex: 'F'}, {name: 'Spider man', sex: 'M'}])).
 			toEqual('<ul><li>Spider man</li><li>Edith</li><li>Brian</li></ul>')
 	});
+	
     it("Filter Hi, my name is {name}.{if:kids girls} I have {length} girl.{/if:kids}.{if:kids boys} I have {length} boys.{/if:kids}<br/>", function() {
       
       expect(new Template().addFilter({girls: function (data) {

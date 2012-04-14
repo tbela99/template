@@ -2,30 +2,148 @@ Template
 ============
 
 Template is fast and context aware template engine with conditional replacement, iterations and filters.
+Compare to Mustache.js and Hogan.js [here](http://jsperf.com/template-mustachejs-hogan) and [here](http://jsperf.com/template-mustachejs-hogan/2)
 
 - [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
-- Compare to Mustache.js and Hogan.js [here](http://jsperf.com/template-mustachejs-hogan) and [here](http://jsperf.com/template-mustachejs-hogan/2)
 
 How to use
 ---------------------
 
-Substitution is driven by tags that defined which action will be taken and whether the context should be switched. there are some predefined tags:
+Substitution is driven by tags that define which action will be taken and whether the context should be switched.
 
-## Example 1 {#Tag:example-1}
+## Basic usage
 
 	var template = 'Hi, my name is {name}';
 
 	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
+	
+	//using custom tag delimiters
+	new Template({begin: '[[', end: ']]'}).substitute('Hi, my name is [[name]]', {name: 'Bob'}) // -> Hi, my name is Bob
+	
+	//changing options after
+	new Template().setOptions({begin: '[[', end: ']]'}).substitute('Hi, my name is [[name]]', {name: 'Bob'}) // -> Hi, my name is Bob
+	
+## Compilation
 
-## Example 2 {#Tag:example-2}
+You can compile template for better performances
 
-	var template = 'Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>{/if:kids}';
+	var render = new Template().compile('Hi, my name is {name}');
 
-	new Template().substitute(template, {name: 'Martina'}) // -> Hi, my name is Martina.
-	new Template().substitute(template, {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']}) // -> Hi, my name is Emily. I have 3 lovely kids: <ul><li>Brian</li><li>Edith</li><li>Spider man</li></ul>
+	render({name: 'Bob'}) // -> Hi, my name is Bob
+	
+## Logic test
 
-## Example 3 {#Tag:example-modifiers}
+You can apply some if-else logic (there are also other logic tests like defined, empty, not-empty).
+Note the if-else test switch the context if the evaluated property is an object (if typeof data[property] == 'object')
 
+	var data = {name: 'Bob'};
+	
+	new Template().substitute('{name} is a{if:win} winner!{else:win} looser!{/if:win}', data) // -> Bob is a looser!
+	
+	//switch the context here to data.kids
+	data = {kids: [1, 2, 3, 4]};
+	
+	new Template().substitute('{if:kids}I have {length} kids{/if:kids}', data) // -> I have 4 kids
+	
+	//context is not switched here because data.kids is not an object.
+	data = {kids: 1};
+	
+	new Template().substitute('{if:kids}I have {kids} kid{/if:kids}', data) // -> I have 1 kid
+	
+## Iteration
+
+There are two way to iterate over data. You use *loop:* to iterate over every property of the current context and *repeat* to
+iterate over a property of the current context.
+
+	var data = {list: [1, 2, 3, 4]}
+	
+	new Template().substitute('{repeat:list} {.}{/repeat:list}', data) // -> 1 2 3 4
+	
+	//data.list is the context here
+	new Template().substitute('{loop:} {.}{/loop:}', data.list) // -> 1 2 3 4
+	
+## Filtering data
+	
+You can alter data before there are applied to the template using filters. filters can be used with any predifined tag (or custom tags).
+You can apply multiple filters at once, they must be separated by one or more spaces. you can't supply parameters to filters.
+
+	var data = {list: [1, 2, 3, 4]},
+		template = new Template();
+		
+		
+	template.addFilter('reverse', function (data) {
+	
+		if(data instanceof Array) return data.reverse();
+		
+		var stack = [];
+		
+		for(var prop in data) stack.unshift(data[prop]);
+		
+		return stack
+	}).
+	addFilter('even', function (data) {
+	
+		
+		return data.filter(function (value) {
+		
+			return !isNaN(value) && value % 2 == 0
+		})
+	});
+		
+	template.substitute('{repeat:list reverse} {.}{/repeat:list}', data) // -> 4 3 2 1
+	template.substitute('{repeat:list even} {.}{/repeat:list}', data) // -> 2 4
+	
+	//You can even apply multiple filters
+	template.substitute('{repeat:list even reverse} {.}{/repeat:list}', data) // -> 4 2
+	
+## Rendering data with modifiers
+
+You can alter data before they are rendered using modifiers. You can pass parameters to modifiers by simply adding them after the modifier name, they must be separated by one or more spaces
+	
+	var data = {list: [1, 2, 3, 4]},
+		template = new Template();
+		
+	template.addModifier('sum', function (data) {
+	
+		var sum = 0, i;
+		
+		for(i = 0; i < data.length; i++) if(!isNaN(data[i])) sum += data[i];
+		
+		return sum
+	}).
+	addModifier('product', function (data) {
+	
+		var product = 1, i;
+		
+		for(i = 0; i < data.length; i++) if(!isNaN(data[i])) product *= data[i];
+		
+		return product
+	});
+		
+	template.substitute('the sum is {sum} and the product is {product}', data.list) // -> the sum is 10 and the product is 24
+	
+Passing parameters to a modifier function
+
+	var data = {firstname: 'Bob', lastname: 'Malone'},
+		template = new Template().addModifier({
+		
+			changeCase: function (data, property, how) {
+			
+				switch(how) {
+				
+					case 'uppercase': return data[property].toUpperCase(); 
+					case 'lowercase': return data[property].toLowerCase(); 
+				}
+				
+				return data[property]
+			}
+		});
+		
+	//parameters #1 firstname and uppercase, #2 lastname and lowercase
+	template.substitute('{changeCase firstname uppercase} {changeCase lastname lowercase}', data) //-> BOB malone
+	
+In the previous example I passed the property name and how the case will be changed. The example below formats a number into formatted file size
+		
 	//display formatted file size
 	Number.implement({
 		
@@ -40,106 +158,37 @@ Substitution is driven by tags that defined which action will be taken and wheth
 		}
 	});
 	
-	var template = 'File {name} size {toFileSize size}';
-	
-	document.body.appendText(new Template().addModifier('toFileSize', function (data, property) {
+	var template = new Template().addModifier('toFileSize', function (data, property) {
 	
 		return (+data[property]).toFileSize()
 		
-	}).substitute(template, {name: 'Bob.jpg', size: 14578559})) // -> File: "Bob.jpg", size: 13.90 MB 
+	});
 	
-	//format user name
-	var template = 'Hi, my name is {fullname}';
+	template.substitute('File {name} size {toFileSize size}', {name: 'Bob.jpg', size: 14578559}); // -> File: "Bob.jpg", size: 13.90 MB 
 	
-	document.body.appendText(new Template().addModifier('fullname', function (data) {
+# Extending with your own tag
+
+You can provide your own function to parse custom tags. filters are not applied to the data. You will apply them yourself
+
+ var template = new Template();
+ 
+	template.setOptions({parse: function (tag, property, substring, data, options, filters) {
 	
-		return '"' + data.name + ' ' + data.lastname + '"'
+		//apply filters
+		if(filters) for(var i = 0; i < filters.length; i++) data = options.filters[filters[i]](data);
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "Bob Malone" 
-	
-	//format user name, another example
-	var template = 'Hi, my name is {fullname uppercase}';
-	
-	document.body.appendText(new Template().addModifier('fullname', function (data, transform) {
-	
-		if(transform == 'uppercase') return '"' + data.name.toUpperCase() + ' ' + data.lastname.toUpperCase() + '"';
-		return '"' + data.name + ' ' + data.lastname + '"'
+		var string = '';
 		
-	}).substitute(template, {name: 'Bob', lastname: 'Malone'})) // -> Hi, my name is "BOB MALONE" 
-	
-## Example 4 {#Tag:example-filters}
-
-	var	template = new Template().addFilter({reverse: function (data) {
-	
-				var values = [];
-				
-				Object.each(data, function (value) { values.unshift(value) });
-				
-				return values
-			
-			},
-			boys: function (data) {
+		//do stuff
+		//...
 		
-				var values = [];
-				
-				Object.each(data, function (value) { if(value.sex == 'M') values.push(value) });
-				
-				return values
-				
-			}
-		),
-		tmpl = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop: reverse}<li>{name}</li>{/loop:}</ul>.{/if:kids}<br/>',
-		data = {
-					name: 'Emily', 
-					kids: [
-						{name: 'Brian', sex: 'M'},
-						{name: 'Edith', sex: 'F'}, 
-						{name: 'Spider man', sex: 'M'}
-					]
-				};
-	
-	//kids appear in reversed order
-	document.body.appendText(template.substitute(tmpl, data)) // ->  Hi, my name is Emily. I have 3 lovely kids: <ul><li>Spider man</li><li>Edith</li><li>Brian</li></ul>.<br/>
-	
-	//how many boyz I got ?
-	document.body.appendText(template.substitute('{if:kids boys} I have {length} boys.{/if:kids}', data)) // ->   I have 2 boys
-
-## Example 5 {#Tag:example-5}
-
-	var template = 'Hi, my name is {name}{if:age}, I am {age}{/if:age}';
-
-	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
-	new Template().substitute(template, {name: 'Bob', age: function () { return 11 }}) // -> Hi, my name is Bob, I am 11
-
-## Example 6 {#Tag:example-6}
-
-	var template = '<div><h1>{country}</h1>{defined:players}<ul>{repeat:players}<li>Player #{number}: {name}, {position}{not-empty:substitute}. substitute{/not-empty:substitute}</li>{/repeat:players}{/defined:players}</div>',
-		data = [
-				{
-					country: 'Cameroon', 
-					players: [
-					
-						{position: 'goalkeeper', number: 1, name: 'The Wall'},
-						{position: 'attacker', number: 9, name: 'Speedy'}, 
-						{position: 'middfield', number: 25, name: 'Charly', substitute: true}
-					]
-				}, 
-				{
-					country: 'Argentina', 
-					players: [
-					
-						{position: 'middfield', number: 10, name: 'Diego'}, 
-						{position: 'attacker', number: 8, name: 'Samuel', substitute: true}, 
-						{position: 'goolkeeper', number: 1, name: 'Stone'}
-					]
-				}
-			];
-
-	new Template().substitute('{loop:}' + template + '{/loop:}', data) // -> <div><h1>Cameroon</h1><ul><li>Player #1: The Wall, goalkeeper</li><li>Player #9: Speedy, attacker</li><li>Player #25: Charly, middfield. substitute</li></ul></div><div><h1>Argentina</h1><ul><li>Player #10: Diego, middfield</li><li>Player #8: Samuel, attacker. substitute</li><li>Player #1: Stone, goolkeeper</li></ul></div>
+		
+		return string
+	}})
 
 ## Template Tag: IF  {#Tag:if}
 
-this tag switch the replacement context in the match1 if the property is evaluated to an object/array.
+Tests if the given property exists and is not a falsy value. the context may be switched if the property is evaluated to an object.
 
 ### Syntax:
 
@@ -147,13 +196,13 @@ this tag switch the replacement context in the match1 if the property is evaluat
 
 ### Rules
 
-- if the property does not exists or is evaluated to a falsy value (undefined, null, an empty string, an empty array or zero) the match2 is used in the current context if defined.
-- if the property exists in the currrent context then match1 is used. if the property is evaluated to an object/array, the result is substituted in match1, else match1 will be used in the current context.
+- if the property does not exists or is evaluated to a falsy value (undefined, null, false, an empty string, an empty array or zero) then match2 is used in the current context.
+- if the property exists in the currrent context then match1 is used. if the property is evaluated to an object, the replacement context of match1 is switched to that object, else match1 will be used in the current context.
 
 
 ## Template Tag: DEFINED {#Tag:defined}
 
-this tag does not switch the context.
+tests if the given property exists and is not null or undefined. the context is not switched. 
 
 ### Syntax:
 
@@ -167,7 +216,7 @@ Syntax: {if:property} match1 [{else:property} match2]{/if:property}
 
 ## Template Tag: NOT-EMPTY {#Tag:not-empty}
 
-this tag does not switch the context.
+tests if the given property exists and is not a falsy value (undefined, null, false, an empty string, an empty array or zero). the context is not switched
 
 ### Syntax: 
 
@@ -179,7 +228,7 @@ this tag does not switch the context.
 
 ## Template Tag: EMPTY {#Tag:empty}
 
-this tag does not switch the context.
+tests if the given property does not exists or is a falsy value (undefined, null, false, an empty string, an empty array or zero).
 
 ### Syntax: 
 
@@ -191,7 +240,7 @@ this tag does not switch the context.
 
 ## Template Tag: REPEAT {#Tag:repeat}
 
-this tag switch the context
+Iterates over the given property
 
 ### Syntax: 
 	
@@ -199,11 +248,11 @@ this tag switch the context
 
 ### Rules
 
-- if the property is evaluated to a an array/object then every elements will be susbstituted to match1. if the result of the evaluation is an object and that object contains a property 'each' which is a function, this property will be used to iterate over the object properties. if match1 contains '{.}' then '{.}' will be replaced by the current property value.
+- if the property is evaluated to a an array then every elements will be susbstituted to match1. if the result of the evaluation is an object and that object contains a property 'each' which is a function, this property will be used to iterate over the object properties. if match1 contains '{.}' then '{.}' will be replaced by the current property value.
 
 ## Template Tag: LOOP {#Tag:loop}
 
-this tag switch the context. this tag works exactly like the *repeat* tag, but iteration is done over the current context.
+this tag works exactly like the *repeat* tag, but iteration is done over the current context.
 
 Syntax: {loop:} match1{/loop:}
 
@@ -227,7 +276,7 @@ Syntax: {loop:} match1{/loop:}
 ##### Options:parse Arguments
 
 - tag - (*string*) tag name
-- name - (*string*) property name
+- property - (*string*) property name
 - template - (*string*)
 - data - (*mixed*) current context
 - options - (*object*) a mix of template options, filters and modifiers. the filters properties contains all avalaible filters and the modifiers property contains all avalaible modifiers 
@@ -257,7 +306,7 @@ substitute the given object into the given string template.
 Template Method: compile 
 --------------------
 
-compile the given template to a function for optimal performances.
+compile the given template to a function for optimal performances. after a call to setOptions, addFilter or addModifier, the previously returned result becomes obsolete.
 
 ### Syntax:
 
@@ -270,7 +319,7 @@ compile the given template to a function for optimal performances.
 
 ### Returns:
 
-* (*string*)
+* (*function*)
 
 ### Arguments:
 
@@ -297,13 +346,12 @@ substitute the given object into the given template string and return DOM nodes.
 
 - string - (*string*) input template
 - data - (*object*) global context
-- options - (*object*, optional) override some of the template instance options.
 	
 
 Template Method: setOptions 
 --------------------
 
-set options.
+set template options.
 
 ### Syntax:
 
