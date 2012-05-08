@@ -22,7 +22,7 @@
 	
 	template = '\\[[dummy]] [[title]] spends [[calc]] on [[products.0]]';
 	
-	document.body.grab(new Element('br')).appendText(new Template().substitute(template, view, {begin: '[[', end: ']]'}));
+	document.body.grab(new Element('br')).appendText(new Template({begin: '[[', end: ']]'}).substitute(template, view));
 	
 	
 	document.body.grab(new Element('br')).appendText(new Template().substitute('{title} spend {calc}. this is a {loop:} broken template \\{loop:} {loop:}', view));

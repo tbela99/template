@@ -25,7 +25,7 @@ Substitution is driven by tags that define which action will be taken and whethe
 	
 ## Compilation
 
-You can compile template for better performances
+You can compile template for better performances.
 
 	var render = new Template().compile('Hi, my name is {name}');
 
@@ -334,7 +334,7 @@ substitute the given object into the given template string and return DOM nodes.
 ### Syntax:
 
 	var template = new Template();
-	var nodes = template.html(string, data[, options]);
+	var nodes = template.html(string, data);
 	
 	document.body.adopt(nodes);
 
