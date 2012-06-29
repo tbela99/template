@@ -112,14 +112,14 @@ provides: [Template]
 		if(!state.iterable) {
 		
 			fn = new Function('data,options,evaluate,nestedeval,tmp,undef', 'return ' + result[join]('+')[replace](/html\+=/g, ''));
-			return function (data) { return fn(data, options, evaluate, nestedeval) }
+			return function (data, html) { return html ? Elements.from(fn(data, options, evaluate, nestedeval)) : fn(data, options, evaluate, nestedeval) }
 		} 
 	
 		fn = new Function('data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,stack,buffer,filters,tmp,undef', ('var html = "";' + result[join](';') + ';return html')[replace]('html = "";html+="', 'html = "'));
 		
-		return function (data) {
+		return function (data, html) {
 		
-			return fn(data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,[],[],[])
+			return html ? Elements.from(fn(data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,[],[],[])) : fn(data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,[],[],[])
 		}
 	}
 	
@@ -191,6 +191,7 @@ provides: [Template]
 					
 					_filters = match[split](':');
 					tag = _filters[shift]();
+
 					if(_filters[0].charAt(0) == ' ') {
 					
 						name = '';

@@ -8,13 +8,14 @@
 
 <script type="text/javascript">
 
-	var tmpl = 'Hi, my name is {name}',
+	var tmpl = '<span>Hi, my name is {name}</span>',
 		template = new Template();
 		render = template.compile(tmpl),
 		data = {name: 'Bob'};
 	
 	document.body.grab(new Element('br')).appendText(template.substitute(tmpl, data));
 	document.body.grab(new Element('br')).appendText(render(data));
+	document.body.grab(new Element('br')).adopt(render(data, true));
 	
 </script>
 </body></html>

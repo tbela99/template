@@ -27,9 +27,13 @@ Substitution is driven by tags that define which action will be taken and whethe
 
 You can compile template for better performances.
 
-	var render = new Template().compile('Hi, my name is {name}');
+	var render = new Template().compile('<span>Hi, my name is {name}</span>');
 
-	render({name: 'Bob'}) // -> Hi, my name is Bob
+	// render as string
+	render({name: 'Bob'}) // -> <span>Hi, my name is Bob</span>
+	
+	// render as an array of Elements
+	render({name: 'Bob'}, true) // -> [<span>]
 	
 ## Logic test
 
@@ -307,15 +311,17 @@ Template Method: compile
 --------------------
 
 compile the given template to a function for optimal performances. after a call to setOptions, addFilter or addModifier, the previously returned result becomes obsolete.
+the function return a string. the function accept a second optional parameter. if this parameter is set to true, the function will return an array of Elements.
 
 ### Syntax:
 
 	var render = new Template().compile(string[, options]);
 	
-	//...
+	// render as string
 	string = render(data);
 	
-	document.body.adopt(Elements.from(string));
+	// render as an array of HTML elements
+	document.body.adopt(Elements.from(render(data, true)));
 
 ### Returns:
 
@@ -324,6 +330,7 @@ compile the given template to a function for optimal performances. after a call 
 ### Arguments:
 
 - data - (*object*)
+- html - (*boolean*) optional, return an array of HTML elements instead of string
 	
 
 Template Method: html 
