@@ -1,0 +1,6 @@
+[submodule "Test/jasmine"]
+	path = Test/jasmine
+	url = git://github.com/pivotal/jasmine.git
+[submodule "benchmark.js"]
+	path = benchmark.js
+	url = git://github.com/bestiejs/benchmark.js.git

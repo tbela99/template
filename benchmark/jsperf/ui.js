@@ -7,81 +7,86 @@
 (function(window, document) {
 
   /** Java applet archive path */
-  var archive ='nano.jar',
+  var archive = '../../nano.jar';
+
+  /** Cache of error messages */
+  var errors = [];
 
   /** Google Analytics account id */
-  gaId = '',
+  var gaId = '';
+
+  /** Cache of event handlers */
+  var handlers = {};
+
+  /** A flag to indicate that the page has loaded */
+  var pageLoaded = false;
 
   /** Benchmark results element id prefix (e.g. `results-1`) */
-  prefix = 'results-',
+  var prefix = 'results-';
 
-  /** Object containing various css class names */
-  classNames = {
+  /** The element responsible for scrolling the page (assumes ui.js is just before </body>) */
+  var scrollEl = document.body;
 
-    /** CSS class name used for error styles */
+  /** Used to resolve a value's internal [[Class]] */
+  var toString = {}.toString;
+
+  /** Namespace */
+  var ui = new Benchmark.Suite;
+
+  /** Object containing various CSS class names */
+  var classNames = {
+    // used for error styles
     'error': 'error',
-
-    /** CSS class name used to make content visible */
+    // used to make content visible
     'show': 'show',
-
-    /** CSS class name used to reset result styles */
+    // used to reset result styles
     'results': 'results'
-  },
-
-  /** Object containing various text messages */
-  texts = {
-
-    /** Inner text for the various run button states */
-    'run': {
-      'ready': 'Run tests',
-      'again': 'Run again',
-      'running': 'Stop running'
-    },
-
-    /** Common status values */
-    'status': {
-      'ready': 'Ready to run.',
-      'again': 'Done. Ready to run again.'
-    }
-  },
+  };
 
   /** Used to flag environments/features */
-  has = {
+  var has = {
     // used for pre-populating form fields
     'localStorage': !!function() {
       try {
         return !localStorage.getItem(+new Date);
-      } catch(e) {}
+      } catch(e) { }
     }(),
+    // detects Opera Mini
+    'operaMini': platform.name == 'Opera Mini',
     // used to distinguish between a regular test page and an embedded chart
     'runner': !!$('runner')
-  },
+  };
 
-  /** Cache of error messages */
-  errors = [],
+  /** Object containing various text messages */
+  var texts = {
+    // inner text for the various run button states
+    'run': {
+      'again': 'Run again',
+      'ready': 'Run tests',
+      'running': 'Stop running'
+    },
+    // common status values
+    'status': {
+      'again': 'Done. Ready to run again.',
+      'ready': 'Ready to run.'
+    }
+  };
 
-  /** Cache of event handlers */
-  handlers = {},
+  /** The options object for Benchmark.Suite#run */
+  var runOptions = {
+    'async': !has.operaMini,
+    'queued': true
+  };
 
-  /** A flag to indicate that the page has loaded */
-  pageLoaded = false,
-
-  /** The element responsible for scrolling the page (assumes ui.js is just before </body>) */
-  scrollEl = document.body,
-
-  /** Used to resolve a value's internal [[Class]] */
-  toString = {}.toString,
-
-  /** Namespace */
-  ui = new Benchmark.Suite,
-
-  /** API Shortcuts */
-  each = Benchmark.each,
-  filter = Benchmark.filter,
-  forIn = Benchmark.forIn,
-  formatNumber = Benchmark.formatNumber,
-  indexOf = Benchmark.indexOf,
-  invoke = Benchmark.invoke;
+  /** API shortcuts */
+  var each = Benchmark.each,
+      extend = Benchmark.extend,
+      filter = Benchmark.filter,
+      forOwn = Benchmark.forOwn,
+      formatNumber = Benchmark.formatNumber,
+      indexOf = Benchmark.indexOf,
+      invoke = Benchmark.invoke,
+      join = Benchmark.join;
 
   /*--------------------------------------------------------------------------*/
 
@@ -89,13 +94,14 @@
 
     /**
      * The onCycle callback, used for onStart as well, assigned to new benchmarks.
+     *
      * @private
      */
     'cycle': function() {
       var bench = this,
-          size = bench.stats.size;
+          size = bench.stats.sample.length;
 
-      if (!bench.aborted) {
+      if (!bench.aborted && !has.operaMini) {
         setStatus(bench.name + ' &times; ' + formatNumber(bench.count) + ' (' +
           size + ' sample' + (size == 1 ? '' : 's') + ')');
       }
@@ -103,6 +109,7 @@
 
     /**
      * The onStart callback assigned to new benchmarks.
+     *
      * @private
      */
     'start': function() {
@@ -117,6 +124,7 @@
 
     /**
      * The "run" button click event handler used to run or abort the benchmarks.
+     *
      * @private
      */
     'run': function() {
@@ -125,9 +133,11 @@
       ui.length = 0;
 
       if (stopped) {
-        logError(false);
-        ui.push.apply(ui, filter(ui.benchmarks, function(bench) { return !bench.error; }));
-        ui.run(true, true);
+        logError({ 'clear': true });
+        ui.push.apply(ui, filter(ui.benchmarks, function(bench) {
+          return !bench.error && bench.reset();
+        }));
+        ui.run(runOptions);
       }
     }
   };
@@ -136,6 +146,7 @@
 
     /**
      * The title table cell click event handler used to run the corresponding benchmark.
+     *
      * @private
      * @param {Object} event The event object.
      */
@@ -151,11 +162,12 @@
       }
       index = id && --id.split('-')[1] || 0;
       ui.push(ui.benchmarks[index].reset());
-      ui.running ? ui.render(index) : ui.run(true, true);
+      ui.running ? ui.render(index) : ui.run(runOptions);
     },
 
     /**
      * The title cell keyup event handler used to simulate a mouse click when hitting the ENTER key.
+     *
      * @private
      * @param {Object} event The event object.
      */
@@ -170,6 +182,7 @@
 
     /**
      * The window hashchange event handler supported by Chrome 5+, Firefox 3.6+, and IE8+.
+     *
      * @private
      */
     'hashchange': function() {
@@ -209,6 +222,7 @@
 
     /**
      * The window load event handler used to initialize the UI.
+     *
      * @private
      */
     'load': function() {
@@ -236,9 +250,12 @@
           });
         }
         // show warning when Firebug is enabled (avoids showing for Firebug Lite)
-        if (typeof window.console != 'undefined' && typeof console.firebug != 'undefined') {
-          addClass('firebug', classNames.show);
-        }
+        try {
+          // Firebug 1.9 no longer has `console.firebug`
+          if (console.firebug || /firebug/i.test(console.table())) {
+            addClass('firebug', classNames.show);
+          }
+        } catch(e) { }
       }
       // evaluate hash values
       // (delay in an attempt to ensure this is executed after all other window load handlers)
@@ -253,6 +270,7 @@
 
   /**
    * Shortcut for document.getElementById().
+   *
    * @private
    * @param {Element|String} id The id of the element to retrieve.
    * @returns {Element} The element, if found, or null.
@@ -263,6 +281,7 @@
 
   /**
    * Adds a CSS class name to an element's className property.
+   *
    * @private
    * @param {Element|String} element The element or id of the element.
    * @param {String} className The class name.
@@ -277,6 +296,7 @@
 
   /**
    * Registers an event listener on an element.
+   *
    * @private
    * @param {Element|String} element The element or id of the element.
    * @param {String} eventName The name of the event.
@@ -296,6 +316,7 @@
 
   /**
    * Appends to an element's innerHTML property.
+   *
    * @private
    * @param {Element|String} element The element or id of the element.
    * @param {String} html The HTML to append.
@@ -310,6 +331,7 @@
 
   /**
    * Shortcut for document.createElement().
+   *
    * @private
    * @param {String} tag The tag name of the element to create.
    * @returns {Element} A new element of the given tag name.
@@ -320,6 +342,7 @@
 
   /**
    * Checks if an element is assigned the given class name.
+   *
    * @private
    * @param {Element|String} element The element or id of the element.
    * @param {String} className The class name.
@@ -332,6 +355,7 @@
 
   /**
    * Set an element's innerHTML property.
+   *
    * @private
    * @param {Element|String} element The element or id of the element.
    * @param {String} html The HTML to set.
@@ -348,6 +372,7 @@
 
   /**
    * Checks if a value has an internal [[Class]] of Function.
+   *
    * @private
    * @param {Mixed} value The value to check.
    * @returns {Boolean} Returns `true` if the value is a function, else `false`.
@@ -358,34 +383,43 @@
 
   /**
    * Appends to or clears the error log.
+   *
    * @private
-   * @param {String|Boolean} text The text to append or `false` to clear.
+   * @param {String|Object} text The text to append or options object.
    */
   function logError(text) {
     var table,
-        div = $('error-info');
+        div = $('error-info'),
+        options = {};
 
+    // juggle arguments
+    if (typeof text == 'object' && text) {
+      options = text;
+      text = options.text;
+    }
+    else if (arguments.length) {
+      options.text = text;
+    }
     if (!div) {
       table = $('test-table');
       div = createElement('div');
       div.id = 'error-info';
       table.parentNode.insertBefore(div, table.nextSibling);
     }
-    if (text === false) {
+    if (options.clear) {
       div.className = div.innerHTML = '';
       errors.length = 0;
     }
-    else {
-      if (indexOf(errors, text) < 0) {
-        errors.push(text);
-        addClass(div, classNames.show);
-        appendHTML(div, text);
-      }
+    if ('text' in options && indexOf(errors, text) < 0) {
+      errors.push(text);
+      addClass(div, classNames.show);
+      appendHTML(div, text);
     }
   }
 
   /**
    * Sets the status text.
+   *
    * @private
    * @param {String} text The text to write to the status.
    */
@@ -397,6 +431,7 @@
 
   /**
    * Parses the window.location.hash value into an object assigned to `ui.params`.
+   *
    * @static
    * @memberOf ui
    * @returns {Object} The suite instance.
@@ -407,7 +442,7 @@
         params = me.params || (me.params = {});
 
     // remove old params
-    forIn(params, function(value, key) {
+    forOwn(params, function(value, key) {
       delete params[key];
     });
 
@@ -421,6 +456,7 @@
 
   /**
    * Renders the results table cell of the corresponding benchmark(s).
+   *
    * @static
    * @memberOf ui
    * @param {Number} [index] The index of the benchmark to render.
@@ -441,7 +477,7 @@
       if (error) {
         setHTML(cell, 'Error');
         addClass(cell, classNames.error);
-        parsed = Benchmark.join(error, '</li><li>');
+        parsed = join(error, '</li><li>');
         logError('<p>' + error + '.</p>' + (parsed ? '<ul><li>' + parsed + '</li></ul>' : ''));
       }
       else {
@@ -449,12 +485,18 @@
         if (bench.running) {
           setHTML(cell, 'running&hellip;');
         }
-        // status: finished
+        // status: completed
         else if (bench.cycles) {
-          cell.title = 'Ran ' + formatNumber(bench.count) + ' times in ' +
-            bench.times.cycle.toFixed(3) + ' seconds.';
-          setHTML(cell, formatNumber(hz.toFixed(hz < 100 ? 2 : 0)) +
-            ' <small>&plusmn;' + bench.stats.rme.toFixed(2) + '%</small>');
+          // obscure details until the suite has completed
+          if (ui.running) {
+            setHTML(cell, 'completed');
+          }
+          else {
+            cell.title = 'Ran ' + formatNumber(bench.count) + ' times in ' +
+              bench.times.cycle.toFixed(3) + ' seconds.';
+            setHTML(cell, formatNumber(hz.toFixed(hz < 100 ? 2 : 0)) +
+              ' <small>&plusmn;' + bench.stats.rme.toFixed(2) + '%</small>');
+          }
         }
         else {
           // status: pending
@@ -473,8 +515,9 @@
 
   /*--------------------------------------------------------------------------*/
 
-  ui.on('add', function(event, bench) {
-    var index = ui.benchmarks.length,
+  ui.on('add', function(event) {
+    var bench = event.target,
+        index = ui.benchmarks.length,
         id = index + 1,
         title = $('title-' + id);
 
@@ -494,8 +537,10 @@
     }
   })
   .on('start cycle', function() {
-    ui.render();
-    setHTML('run', texts.run.running);
+    if (!has.operaMini) {
+      ui.render();
+      setHTML('run', texts.run.running);
+    }
   })
   .on('complete', function() {
     var benches = filter(ui.benchmarks, 'successful'),
@@ -506,19 +551,21 @@
     setHTML('run', texts.run.again);
     setStatus(texts.status.again);
 
+    // highlight result cells
     each(benches, function(bench) {
       var percent,
-          text = 'fastest',
           cell = $(prefix + (indexOf(ui.benchmarks, bench) + 1)),
-          span = cell.getElementsByTagName('span')[0];
+          hz = bench.hz,
+          span = cell.getElementsByTagName('span')[0],
+          text = 'fastest';
 
       if (indexOf(fastest, bench) > -1) {
         // mark fastest
         addClass(cell, text);
       }
       else {
-        percent = Math.round((1 - bench.hz / fastest[0].hz) * 100);
-        text = percent + '% slower';
+        percent = Math.round((1 - hz / fastest[0].hz) * 100);
+        text = isFinite(hz) ? percent + '% slower' : '';
 
         // mark slowest
         if (indexOf(slowest, bench) > -1) {
@@ -540,6 +587,7 @@
 
   /**
    * An array of benchmarks created from test cases.
+   *
    * @memberOf ui
    * @type Array
    */
@@ -547,6 +595,7 @@
 
   /**
    * The parsed query parameters of the pages url hash.
+   *
    * @memberOf ui
    * @type Object
    */
@@ -609,22 +658,25 @@
     };
   }());
 
+  /*--------------------------------------------------------------------------*/
+
   // fork for runner or embedded chart
   if (has.runner) {
     // detect the scroll element
     (function() {
-      var div = document.createElement('div'),
+      var scrollTop,
+          div = document.createElement('div'),
           body = document.body,
           bodyStyle = body.style,
           bodyHeight = bodyStyle.height,
           html = document.documentElement,
           htmlStyle = html.style,
-          htmlHeight = htmlStyle.height,
-          scrollTop = html.scrollTop;
+          htmlHeight = htmlStyle.height;
 
       bodyStyle.height  = htmlStyle.height = 'auto';
-      div.style.cssText = 'display:block;height:8500px;';
+      div.style.cssText = 'display:block;height:9001px;';
       body.insertBefore(div, body.firstChild);
+      scrollTop = html.scrollTop;
 
       // set `scrollEl` that's used in `handlers.window.hashchange()`
       if (html.clientWidth !== 0 && ++html.scrollTop && html.scrollTop == scrollTop + 1) {
@@ -636,31 +688,37 @@
       html.scrollTop = scrollTop;
     }());
 
+    // catch and display errors from the "preparation code"
+    window.onerror = function(message, fileName, lineNumber) {
+      logError('<p>' + message + '.</p><ul><li>' + join({
+        'message': message,
+        'fileName': fileName,
+        'lineNumber': lineNumber
+      }, '</li><li>') + '</li></ul>');
+      scrollEl.scrollTop = $('error-info').offsetTop;
+    };
     // inject nano applet
     // (assumes ui.js is just before </body>)
     if ('nojava' in ui.params) {
       addClass('java', classNames.show);
     } else {
+      // using innerHTML avoids an alert in some versions of IE6
       document.body.insertBefore(setHTML(createElement('div'),
         '<applet code=nano archive=' + archive + '>').lastChild, document.body.firstChild);
-    }
-    // inject /dart notice for Android/Chrome
-    // (recycle other elements/styles for now)
-    if (/Android|Chrome/.test(Benchmark.platform)) {
-      setHTML('java', '<strong>Is Google JavaScript’s BFF? Check out the <a href="http://jsperf.com/dart">Dart summary</a>.</strong>');
-      addClass('java', classNames.show);
     }
   }
   else {
     // short circuit unusable methods
     ui.render = function() { };
-    ui.removeAllListeners('start cycle complete');
+    ui.off('start cycle complete');
     setTimeout(function() {
-      ui.removeAllListeners();
+      ui.off();
       ui.browserscope.post = function() { };
-      invoke(ui.benchmarks, 'removeAllListeners');
+      invoke(ui.benchmarks, 'off');
     }, 1);
   }
+
+  /*--------------------------------------------------------------------------*/
 
   // optimized asynchronous Google Analytics snippet based on
   // http://mathiasbynens.be/notes/async-analytics-snippet

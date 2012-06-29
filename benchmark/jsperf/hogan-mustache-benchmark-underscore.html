@@ -49,8 +49,11 @@
         return 2 + 4;
       }
     },
+	_raw = {title: 'Joe', calc: 6},
 	compiled = Hogan.compile("{{title}} spends {{calc}}");
 	
+	_.templateSettings = {evaluate: /\{([\s\S]+?)\}/g, interpolate: /\{([\s\S]+?)\}/g, escape: /\\{([\s\S]+?)\}/g}
+
 	</pre>
 	</code>
 	
@@ -122,6 +125,15 @@
         </td>
         <td id="results-4" class="results"></td>
       </tr>
+      <tr>
+        <th scope="row" id="title-5"><div>Underscore</div></th>
+        <td>
+        <pre><code>
+		_.template("{title} spends {calc}", _raw)
+		</code></pre>
+        </td>
+        <td id="results-5" class="results"></td>
+      </tr>
       </tbody>
     </table>
 
@@ -182,14 +194,16 @@
   &middot; by <a href="http://mathiasbynens.be/" title="Mathias Bynens, front-end web developer">@mathias</a>
 </footer>
 
-<script src="benchmark.js"></script>
+<script src="../../benchmark.js/vendor/platform.js/platform.js"></script>
+<script src="../../benchmark.js/benchmark.js"></script>
 <script src="ui.js"></script>
-<script src="ui.browserscope.js"></script>
+<script src="../../benchmark.js/plugin/ui.browserscope.js"></script>
 <script src="../../mootools.js"></script>
 <script src="../../Source/Template.js"></script>
 <script src="mustache.js"></script>
 <script src="hogan.js"></script>
 <script src="compiler.js"></script>
+<script src="underscore.js"></script>
 <script>
   ui.browserscope.key = 'agt1YS1wcm9maWxlcnINCxIEVGVzdBjTlbUIDA';
   ui.browserscope.selector = '#bs-results';
@@ -203,9 +217,11 @@
         return 2 + 4;
       }
     },
+	_raw = {title: 'Joe', calc: 6},
 	compiled = Hogan.compile("{{title}} spends {{calc}}");
 	
-	
+_.templateSettings = {evaluate: /\{([\s\S]+?)\}/g, interpolate: /\{([\s\S]+?)\}/g, escape: /\\{([\s\S]+?)\}/g}
+
   ui.add('Mustache', function() {
   
 		Mustache.to_html("{{title}} spends {{calc}}", view)
@@ -218,6 +234,10 @@
   }).add('Template', function() {
   
 		template.substitute('{title} spends {calc}', view)
+  }).add('Underscore', function() {
+  
+		_.template("{title} spends {calc}", _raw)
+		
   })
 </script>
 </body>
