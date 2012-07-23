@@ -17,6 +17,12 @@ Substitution is driven by tags that define which action will be taken and whethe
 
 	new Template().substitute(template, {name: 'Bob'}) // -> Hi, my name is Bob
 	
+	//escape every HTML special chars by default
+	new Template({escape: true}).substitute('Hi, my company name is {name}', {name: 'Bob & Jim'}) // -> Hi, my name is Bob &amp; Jim
+	
+	// explicitely escape some strings
+	new Template().substitute('Hi, my company name is {escape name}', {name: 'Bob & Jim'}) // -> Hi, my name is Bob &amp; Jim
+	
 	//using custom tag delimiters
 	new Template({begin: '[[', end: ']]'}).substitute('Hi, my name is [[name]]', {name: 'Bob'}) // -> Hi, my name is Bob
 	
@@ -68,7 +74,7 @@ iterate over a property of the current context.
 	
 ## Filtering data
 	
-You can alter data before there are applied to the template using filters. filters can be used with any predifined tag (or custom tags).
+You can alter data before there are applied to the template using filters. filters can be used with any predefined tag (or custom tags).
 You can apply multiple filters at once, they must be separated by one or more spaces. you can't supply parameters to filters.
 
 	var data = {list: [1, 2, 3, 4]},
@@ -102,24 +108,46 @@ You can apply multiple filters at once, they must be separated by one or more sp
 	
 ## Rendering data with modifiers
 
-You can alter data before they are rendered using modifiers. You can pass parameters to modifiers by simply adding them after the modifier name, they must be separated by one or more spaces
+You can alter data before they are rendered using modifiers. You can pass parameters to modifiers by simply adding them after the modifier name, they must be separated by one or more spaces.
+there are two predefined modifiers:
+
+### Modifier escape
+
+Escape HTML special chars whether escape string is enabled by default or not.
+
+Syntax: 
+
+	var tmpl = "my name is {escape name}", // escape &, < and >
+		tmpl2 = "my name is {escape name true}" // escape &, <, >, " and '
+
+### Modifier raw
+
+Return string as is whether escape string is enabled by default of not.
+
+Syntax: 
+
+	var tmpl = "my name is {escape name}", // escape &, < and >
+		tmpl2 = "my name is {escape name true}" // escape &, <, >, " and '
+
+
+### Example
 	
 	var data = {list: [1, 2, 3, 4]},
 		template = new Template();
 		
-	template.addModifier('sum', function (data) {
+	template.addModifier('sum', function (context) {
 	
 		var sum = 0, i;
 		
-		for(i = 0; i < data.length; i++) if(!isNaN(data[i])) sum += data[i];
+		for(i = 0; i < context.length; i++) if(!isNaN(context[i])) sum += context[i];
 		
 		return sum
 	}).
-	addModifier('product', function (data) {
+	addModifier('product', function (context) {
 	
 		var product = 1, i;
 		
-		for(i = 0; i < data.length; i++) if(!isNaN(data[i])) product *= data[i];
+		for(i = 0; i < context.length; i++) if(!isNaN(context[i])) product *= context[i];
 		
 		return product
 	});
@@ -131,12 +159,12 @@ Passing parameters to a modifier function
 	var data = {firstname: 'Bob', lastname: 'Malone'},
 		template = new Template().addModifier({
 		
-			changeCase: function (data, property, how) {
+			changeCase: function (context, property, how) {
 			
 				switch(how) {
 				
-					case 'uppercase': return data[property].toUpperCase(); 
-					case 'lowercase': return data[property].toLowerCase(); 
+					case 'uppercase': return context[property].toUpperCase(); 
+					case 'lowercase': return context[property].toLowerCase(); 
 				}
 				
 				return data[property]
@@ -162,9 +190,9 @@ In the previous example I passed the property name and how the case will be chan
 		}
 	});
 	
-	var template = new Template().addModifier('toFileSize', function (data, property) {
+	var template = new Template().addModifier('toFileSize', function (context, property) {
 	
-		return (+data[property]).toFileSize()
+		return (+context[property]).toFileSize()
 		
 	});
 	
@@ -275,6 +303,8 @@ Syntax: {loop:} match1{/loop:}
 * begin - (*string*, optional) opening token delimiter, default to *{*.
 * end - (*string*, optional) closing token delimiter, default to *}*.
 * debug - (*boolean*, optional) log messages in the console if there are token with no match.
+* escape - (*boolean*, optional) escape string by default, by default single and double quotes are not escaped
+* quote - (*boolean*, optional) if escape is true then escape single and double quotes
 * parse - (*function*, optional) function called when an unknown tag is found. you can use this to handle your custom tag
 
 ##### Options:parse Arguments
@@ -284,7 +314,7 @@ Syntax: {loop:} match1{/loop:}
 - template - (*string*)
 - data - (*mixed*) current context
 - options - (*object*) a mix of template options, filters and modifiers. the filters properties contains all avalaible filters and the modifiers property contains all avalaible modifiers 
-- filters - (*array*) list of filters name data should be applied to data
+- filters - (*array*) list of filters name that should be applied to data
 
 Template Method: substitute 
 --------------------
@@ -315,13 +345,13 @@ the function return a string. the function accept a second optional parameter. i
 
 ### Syntax:
 
-	var render = new Template().compile(string[, options]);
+	var render = new Template().compile(string[, html]);
 	
 	// render as string
 	string = render(data);
 	
 	// render as an array of HTML elements
-	document.body.adopt(Elements.from(render(data, true)));
+	document.body.adopt(render(data, true));
 
 ### Returns:
 
@@ -460,15 +490,15 @@ allow you to handle string remplacement with a custom function. this function ac
 	var template = new Template();
 	
 	//syntax #1
-	template.addModifier('myname', function (data) {
+	template.addModifier('myname', function (context) {
 	
-		return 'my name is ' + data.name
+		return 'my name is ' + context.name
 	});
 	
 	//syntax #2
 	template.addModifier({
-		fullname: function (data) { return data.name + ' ' + data.lastname }, 
-		othername: function (data) { return 'my other name is ' + data.othername }
+		fullname: function (context) { return context.name + ' ' + context.lastname }, 
+		othername: function (context) { return 'my other name is ' + context.othername }
 	});
 	
 	document.body.adopt(nodes);
@@ -482,15 +512,15 @@ allow you to handle string remplacement with a custom function. this function ac
 	var tmpl = 'Hi, my name is {fullname}',
 		data = {name: 'Bob', lastname: 'Malone'};
 	
-	document.body.appendText(new Template().addModifier('fullname', function (data) {
+	document.body.appendText(new Template().addModifier('fullname', function (context) {
 	
-		return '"' + data.name + ' ' + data.lastname + '"'
+		return '"' + context.name + ' ' + context.lastname + '"'
 		
 	}).substitute(tmpl, data)) // -> Hi, my name is "Bob Malone"	
 
 ### Modifier function Arguments:
 
-- data - (*mixed*) replacement context
+- context - (*mixed*) replacement context
 - property - (*string*) property name.
 	
 Known Issues:

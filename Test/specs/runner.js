@@ -359,6 +359,160 @@ describe("Template test", function() {
 	  }
 	  )).toEqual("Yes!")
     })
+  });
+	
+  describe("Escaping string", function() {
+  
+  describe("raw modifier", function() {
+  
+    it("escape string by default, use raw modifier to not escape string {exp1} {op} {exp2} {raw link}", function() {
+      
+      expect(new Template({escape: true}).substitute('{exp1} {op} {exp2} {raw link}', {
+	  
+		  exp1: '2 > 1',
+		  op: '&&',
+		  exp2: '2 < 5',
+		  link: '<a href="#foo">Reference</a>'
+	  })).toEqual("2 &gt; 1 &amp;&amp; 2 &lt; 5 <a href=\"#foo\">Reference</a>")
+    });
+	
+    it("escape string by default, use raw modifier to not escape string {raw exp1} {raw op} {raw exp2}", function() {
+      
+      expect(new Template({escape: true}).substitute('{raw exp1} {raw op} {raw exp2}', {
+	  
+		  exp1: '2 > 1',
+		  op: '&&',
+		  exp2: '2 < 5',
+	  })).toEqual("2 > 1 && 2 < 5")
+    });
+	
+    it("Using dot notation: escape string by default, use raw modifier to not escape string {raw math.exp1} {raw math.op} {raw math.exp2}", function() {
+      
+      expect(new Template({escape: true}).substitute('{raw math.exp1} {raw math.op} {raw math.exp2}', {
+
+		math: {
+		
+			exp1: '"2 > 1"',
+			op: '&&',
+			exp2: "'2 < 5'"
+		}
+	  })).toEqual("\"2 > 1\" && '2 < 5'")
+    })	
+  });
+  
+  describe("escape modifier", function() {
+  
+    it("escape special chars using escape modifier {escape exp1} {escape op} {escape exp2}", function() {
+      
+      expect(new Template().substitute('{escape exp1} {escape op} {escape exp2}', {
+	  
+		  exp1: '2 > 1',
+		  op: '&&',
+		  exp2: '2 < 5'
+	  })).toEqual("2 &gt; 1 &amp;&amp; 2 &lt; 5")
+    });
+	
+    it("escape special chars, single and double quotes using escape modifier {escape exp1 true} {escape op true} {escape exp2 true}", function() {
+      
+      expect(new Template().substitute('{escape exp1 true} {escape op true} {escape exp2 true}', {
+	  
+		  exp1: '"2 > 1"',
+		  op: '&&',
+		  exp2: "'2 < 5'"
+	  })).toEqual("&quot;2 &gt; 1&quot; &amp;&amp; &apos;2 &lt; 5&apos;")
+    });
+	
+    it("using dot notation: escape special chars using escape modifier {escape math.exp1} {escape math.op} {escape math.exp2}", function() {
+      
+      expect(new Template().substitute('{escape math.exp1} {escape math.op} {escape math.exp2}', {
+		
+		math: {
+	  
+			exp1: '2 > 1',
+			op: '&&',
+			exp2: '2 < 5'
+		}
+	  })).toEqual("2 &gt; 1 &amp;&amp; 2 &lt; 5")
+    });
+	
+    it("using dot notation: escape special chars, single and double quotes with escape modifier {escape math.exp1 true} and {escape math.exp2 true}", function() {
+      
+      expect(new Template().substitute('{escape math.exp1 true} {escape math.op true} {escape math.exp2 true}', {
+
+		math: {
+		
+			exp1: '"2 > 1"',
+			op: '&&',
+			exp2: "'2 < 5'"
+		}
+	  })).toEqual("&quot;2 &gt; 1&quot; &amp;&amp; &apos;2 &lt; 5&apos;")
+    })
+  });
+  
+  describe("Escaping string by default", function() {
+  
+    it("escape special chars by default {exp1} {op} {exp2}", function() {
+      
+      expect(new Template({
+	  
+		escape: true
+	  }).substitute('{exp1} {op} {exp2}', {
+	  
+		  exp1: '2 > 1',
+		  op: '&&',
+		  exp2: '2 < 5'
+	  })).toEqual("2 &gt; 1 &amp;&amp; 2 &lt; 5")
+    });
+	
+    it("escape special chars, single and double quotes by default {exp1} {op} {exp2}", function() {
+      
+      expect(new Template({
+	  
+		escape: true,
+		quote: true
+	  }).substitute('{exp1} {op} {exp2}', {
+	  
+		  exp1: '"2 > 1"',
+		  op: '&&',
+		  exp2: "'2 < 5'"
+	  })).toEqual("&quot;2 &gt; 1&quot; &amp;&amp; &apos;2 &lt; 5&apos;")
+    });
+	
+    it("using dot notation: escape special chars by default {math.exp1} {math.op} {math.exp2}", function() {
+      
+      expect(new Template({
+	  
+		escape: true
+	  }).substitute('{math.exp1} {math.op} {math.exp2}', {
+		
+		math: {
+	  
+			exp1: '2 > 1',
+			op: '&&',
+			exp2: '2 < 5'
+		}
+	  })).toEqual("2 &gt; 1 &amp;&amp; 2 &lt; 5")
+    });
+	
+    it("using dot notation: escape special chars, single and double quotes by default {math.exp1} and {math.exp2}", function() {
+      
+      expect(new Template({
+	  
+		escape: true,
+		quote: true
+	  }).substitute('{math.exp1} {math.op} {math.exp2}', {
+
+		math: {
+		
+			exp1: '"2 > 1"',
+			op: '&&',
+			exp2: "'2 < 5'"
+		}
+	  })).toEqual("&quot;2 &gt; 1&quot; &amp;&amp; &apos;2 &lt; 5&apos;")
+    })
+	
+  })
+  
   })
 });
   
