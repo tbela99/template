@@ -2,8 +2,8 @@ Template
 ============
 
 Template is fast and context aware template engine with conditional replacement, iterations and filters.
-Compare to Mustache.js and Hogan.js [here](http://jsperf.com/template-mustachejs-hogan) and [here](http://jsperf.com/template-mustachejs-hogan/2)
-Compare to Mustache.js, Hogan.js and Underscore [here](http://jsperf.com/template-mustachejs-hogan/4)
+- Compare to Mustache.js and Hogan.js [here](http://jsperf.com/template-mustachejs-hogan) and [here](http://jsperf.com/template-mustachejs-hogan/2)
+- Compare to Mustache.js, Hogan.js and Underscore [here](http://jsperf.com/template-mustachejs-hogan/4)
 
 - [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
 
