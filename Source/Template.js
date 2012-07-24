@@ -65,7 +65,8 @@ provides: [Template]
 			/* do not escape string */
 			raw: function (context, property, quote) {
 
-				return property.indexOf('.') == -1 ? evaluate(context, {}, property) : nestedeval(context, {}, property.split('.'))
+				var options = {};
+				return property.indexOf('.') == -1 ? evaluate(context, options, property) : nestedeval(context, options, property.split('.'))
 			}
 		},		
 		UID: 0,
@@ -88,7 +89,6 @@ provides: [Template]
 		addFilter: function (name, fn) {
 		
 			if(typeof name == 'object') Object[append](this[filters], name);
-			
 			else this[filters][name] = fn;
 			
 			delete cache[this.UID];
@@ -100,7 +100,6 @@ provides: [Template]
 		addModifier: function (name, fn) {
 		
 			if(typeof name == 'object') Object[append](this[modifiers], name);
-			
 			else this[modifiers][name] = fn;
 			
 			delete cache[this.UID];
@@ -112,16 +111,14 @@ provides: [Template]
 		html: function (template, data) { return Elements.from(this.substitute(template, data)) },	
 		compile: function (template, options) {
 		
+			if(cache[this.UID][template]) return cache[this.UID][template];
 			if(options && options != this.options) this.setOptions(options);
 			
-			options = Object[append]({}, this.options, {filters: this[filters], modifiers: this[modifiers]});
-			if(cache[this.UID][template]) return cache[this.UID][template];
-
-			return compile(template, options || {}, this.UID);
+			return compile(template, Object[append]({}, this.options, {filters: this[filters], modifiers: this[modifiers]}), this.UID);
 		},
 		substitute: function (template, data) {
 		
-			if(!cache[this.UID][template]) this.compile(template, this.options, this.UID);
+			if(!cache[this.UID][template]) this.compile(template);
 			return cache[this.UID][template](data)
 		}	
 	};
