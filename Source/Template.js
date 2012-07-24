@@ -249,6 +249,7 @@ provides: [Template]
 					
 					if(cTagIndex == -1) {
 					
+						// log or throw an error ?
 						log('token ' + oTag  + ' is not closed properly: "' + template[substring](0, cIndex + 1) + '"\n' + original);
 						template = template[replace](oTag, '');
 						continue;
