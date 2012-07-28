@@ -141,12 +141,8 @@ provides: [Template]
 	
 	function parse(template, options, UID) {
 	
-		var state = {},
-			fn,
-			result = inline(template, options, UID, [], [], state);
+		var state = {}, fn, result = inline(template, options, UID, [], [], state);
 			
-		console.log(result.join(';\n'));
-		
 		if(!state.iterable) {
 		
 			fn = new Function('data,options,evaluate,nestedeval,tmp,undef', 'return ' + result[join]('+')[replace](/html\+=/g, ''));
