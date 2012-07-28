@@ -38,7 +38,15 @@ provides: [Template]
 			this.initialize(options); 
 			return this
 		},
-		UID = 0;
+		UID = 0,
+		esc = {
+		
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&apos;'
+		};
 		
 	Template.prototype = {
 
@@ -125,9 +133,7 @@ provides: [Template]
 
 	function escape(string, quote) {
 	
-		var escaped = ('' + string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-		
-		return quote ? escaped.replace(/"/g, '&quot;').replace(/'/g, '&apos;') : escaped
+		return ('' + string).replace(quote ? /[&<>'"]/g : /[&<>]/g , function (c) { return esc[c] })
 	}
 	
 	function compile(template, options, UID) {
