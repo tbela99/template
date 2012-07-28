@@ -63,7 +63,7 @@ provides: [Template]
 				return property.indexOf('.') == -1 ? evaluate(context, options, property) : nestedeval(context, options, property.split('.'))
 			},
 			/* do not escape string */
-			raw: function (context, property, quote) {
+			raw: function (context, property) {
 
 				var options = {};
 				return property.indexOf('.') == -1 ? evaluate(context, options, property) : nestedeval(context, options, property.split('.'))
@@ -145,17 +145,19 @@ provides: [Template]
 			fn,
 			result = inline(template, options, UID, [], [], state);
 			
+		console.log(result.join(';\n'));
+		
 		if(!state.iterable) {
 		
 			fn = new Function('data,options,evaluate,nestedeval,tmp,undef', 'return ' + result[join]('+')[replace](/html\+=/g, ''));
 			return function (data, html) { return html ? Elements.from(fn(data, options, evaluate, nestedeval)) : fn(data, options, evaluate, nestedeval) }
 		} 
 	
-		fn = new Function('data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,stack,buffer,filters,tmp,undef', ('var html = "";' + result[join](';') + ';return html')[replace]('html = "";html+="', 'html = "'));
+		fn = new Function('data,options,compile,test,evaluate,nestedeval,log,stack,buffer,filters,tmp,undef', ('var html = "";' + result[join](';') + ';return html')[replace]('html = "";html+="', 'html = "'));
 		
 		return function (data, html) {
 		
-			return html ? Elements.from(fn(data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,[],[],[])) : fn(data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,[],[],[])
+			return html ? Elements.from(fn(data,options,compile,test,evaluate,nestedeval,log,[],[],[])) : fn(data,options,compile,test,evaluate,nestedeval,log,[],[],[])
 		}
 	}
 	
@@ -239,7 +241,7 @@ provides: [Template]
 						name = _filters[shift]();
 					}
 					
-					if(_filters.length > 0) _filters = _filters.filter(function (filter) { return filter !== '' })
+					if(_filters.length > 0) _filters = _filters.filter(function (filter) { return filter !== '' });
 					
 					match = quote(name);
 					
@@ -272,9 +274,14 @@ provides: [Template]
 							buffer[push]('stack.push(data)',
 										'data=' + (name.length <= 1 ? 'evaluate(data,options,' + quote(name) + ',true)' : 'nestedeval(data,options,[' + quote(name) + '],true)'),
 										'filters=[' + quote(_filters) + ']',
-										'html+=conditional([' + quote(substr[split](elseif)) + '],options,' + quote(UID) + ',test(' + quote(tag) + ',data),' + (tag == 'if' ? 'typeof data == "object"' : 'false') + ',data,stack[stack.length-1],filters)',
+										'var templates=[' + quote(substr[split](elseif)) + '],t=test(' + quote(tag) + ',data),i,swap=' + (tag == 'if' ? 'typeof data == "object"' : 'false') + 
+										',context=stack[stack.length-1],value=templates.length==2?(t&&swap?data:context):(!t?undef:(swap?data:context));' +
+										'if(filters!=false&&value!=undef)for(i=0;i<filters.length;i++)value=options[' + quote(filters) + '][filters[i]](value);' +
+										'if(templates.length==2) html+=compile(templates[!t?1:0],options,' + quote(UID) + ')(value);' +
+										'else if(t)html+=compile(templates[0],options,' + quote(UID) + ')(value)',
 										'data=stack.pop()'
 									);
+									
 							break;
 							
 						case 'loop':
@@ -292,14 +299,20 @@ provides: [Template]
 								'for(tmp=0;tmp<filters.length;tmp++)if(options.filters[filters[tmp]]!=undef)data=options.filters[filters[tmp]](data)'
 							);
 							
-							buffer[push]('if(typeof data == "object") html+=iterate(' + quote(substr) + ',Object.keys(data),options,' + quote(UID) + ',data)');
+							buffer[push]('if(typeof data == "object") {' +
+
+								'var render = compile(' + quote(substr) + ',options, ' + quote(UID) + '),tmpl="",key;' +
+								'for(key in data) if(data.hasOwnProperty(key)) html+=render(evaluate(data,options,key))' +
+	
+							'}');
+							
 							if(tag == 'repeat') buffer[push]('data=stack.pop()');
 							break;
 							
 						default:
 						
 							buffer[push]('tmp=options.parse!=undef?options.parse(' + quote(tag, name, substr) + ',data,options,filters) : ' + quote(substr),
-										'if(options.parse == undef) log("unknown tag: ",' + quote(tag, name, substr, original) + ')',
+										'if(options.parse==undef) log("unknown tag: ",' + quote(tag, name, substr, original) + ')',
 										'html+=tmp==undef?"":tmp'
 									);
 							break;
@@ -313,28 +326,6 @@ provides: [Template]
 		if(template !== '') buffer[push]('html+=' + quote(template));
 		
 		return buffer.filter(function (string) { return string !== '' && string != '""' });
-	}
-			
-	function conditional(templates, options, UID, test, swap, data, context, _filters) {
-	
-		var value = templates.length == 2 ? (test && swap ? data : context) : (!test ? undef : (swap ? data : context));
-		
-		if(_filters && value != undef) for(var i = 0; i < _filters.length; i++) value = options[filters][_filters[i]](value);
-		
-		if(templates.length == 2) return compile(templates[!test ? 1 : 0], options, UID)(value);
-		
-		if(!test) return '';
-	
-		return compile(templates[0], options, UID)(value)
-	}
-	
-	function iterate(template, keys, options, UID, data) {
-	
-		var render = compile(template, options, UID),key,html='';
-		
-		for(key = 0; key < keys.length; key++) html += render(evaluate(data,options,keys[key]));
-			
-		return html
 	}
 	
 	function evaluate (object, options, property, raw) {
