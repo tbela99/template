@@ -1,6 +1,8 @@
 
 describe("Template test", function() {
   
+"use strict";
+
   describe("Default features", function() {
   
     it("Simple token replacement {title} spends {calc}", function() {
@@ -46,9 +48,9 @@ describe("Template test", function() {
 	
 				var sum = 0, i;
 						
-						for(i = 0; i < data.length; i++) if(!isNaN(data[i])) sum += data[i];
-						
-						return sum
+				for(i = 0; i < data.length; i++) if(!isNaN(data[i])) sum += data[i];
+				
+				return sum
 			}).
 			addModifier('product', function (data) {
 			
@@ -103,7 +105,7 @@ describe("Template test", function() {
 	
 			var values = [];
 			
-			Object.each(data, function (value) { if(value.sex == 'F') values.unshift(value) });
+			Object.each(data, function (value) { if(value.sex == 'F') values.push(value) });
 			
 			return values
 			
@@ -437,7 +439,7 @@ describe("Template test", function() {
 	
     it("using dot notation: escape special chars, single and double quotes with escape modifier {escape math.exp1 true} and {escape math.exp2 true}", function() {
       
-      expect(new Template().substitute('{escape math.exp1 true} {escape math.op true} {escape math.exp2 true}', {
+      expect(new Template().substitute('{escape math.exp1} {escape math.op true} {escape math.exp2}', {
 
 		math: {
 		
@@ -468,8 +470,7 @@ describe("Template test", function() {
       
       expect(new Template({
 	  
-		escape: true,
-		quote: true
+		escape: true
 	  }).substitute('{exp1} {op} {exp2}', {
 	  
 		  exp1: '"2 > 1"',
@@ -498,8 +499,7 @@ describe("Template test", function() {
       
       expect(new Template({
 	  
-		escape: true,
-		quote: true
+		escape: true
 	  }).substitute('{math.exp1} {math.op} {math.exp2}', {
 
 		math: {
@@ -510,7 +510,6 @@ describe("Template test", function() {
 		}
 	  })).toEqual("&quot;2 &gt; 1&quot; &amp;&amp; &apos;2 &lt; 5&apos;")
     })
-	
   })
   
   })

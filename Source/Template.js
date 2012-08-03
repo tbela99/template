@@ -23,6 +23,7 @@ provides: [Template]
 	var log = (function () { return window.console && console.log ? function () { console.log.apply(console, arguments) } : function () { } })(),
 		cache = {}, 
 		Object = window.Object,
+		Elements = window.Elements,
 		append = 'append',
 		filters = 'filters',
 		indexOf = 'indexOf',
@@ -35,54 +36,80 @@ provides: [Template]
 		substring = 'substring',
 		Template = window.Template = function (options) { 
 		
+			reset(this);
 			this.initialize(options); 
 			return this
 		},
-		UID = 0;
+		UID = 0,
+		esc = {
 		
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&apos;'
+		};
+		
+	// from mootools
+	function reset(object) {
+	
+		for (var key in object) {
+		
+			var value = object[key];
+			
+			if(value instanceof Array) object[key] = value.clone(); 
+			else if(typeof value == 'object') {
+		
+				var F = function(){};
+				F.prototype = value;
+				object[key] = reset(new F);
+			}
+		}
+		
+		return object
+	}
+
 	Template.prototype = {
 
-	/*
 		options: {
 
+	/*
 			begin: '{',
 			end: '}',
 			debug: false,
 			// parse: function () {},
 			escape: false, // escape strings by default
 			quote: false // escape quotes
-		},
 	*/
+		},
 		filters: {},
 		modifiers: {
 
 			/* explicitely escape string */
-			escape: function (context, property, quote) {
+			escape: function (context, property) {
 
-				var options = {escape: true, quote: quote};
-				return property.indexOf('.') == -1 ? evaluate(context, options, property) : nestedeval(context, options, property.split('.'))
+				return property.indexOf('.') == -1 ? evaluate(context, property, true) : nestedeval(context, property.split('.'), true)
 			},
 			/* do not escape string */
-			raw: function (context, property, quote) {
+			raw: function (context, property) {
 
-				var options = {};
-				return property.indexOf('.') == -1 ? evaluate(context, options, property) : nestedeval(context, options, property.split('.'))
+				return property.indexOf('.') == -1 ? evaluate(context, property) : nestedeval(context, property.split('.'))
 			}
 		},		
-		UID: 0,
+		/* UID: 0, */
 		initialize: function (options) { 
 		
 			this.options = Object[append]({}, options);
-			this.UID = UID++;
+			this.UID = ++UID + '';
 			cache[this.UID] = {}
 		},		
 		setOptions: function (options) {
 		
-			if(options) Object[append](this.options, options);
+			if(options) {
 			
-			delete cache[this.UID];
-			this.UID = UID++;
-			cache[this.UID] = {};
+				Object[append](this.options, options);
+				cache[this.UID] = {};
+			} 
 			
 			return this
 		},
@@ -91,8 +118,6 @@ provides: [Template]
 			if(typeof name == 'object') Object[append](this[filters], name);
 			else this[filters][name] = fn;
 			
-			delete cache[this.UID];
-			this.UID = UID++;
 			cache[this.UID] = {};
 			
 			return this
@@ -102,8 +127,6 @@ provides: [Template]
 			if(typeof name == 'object') Object[append](this[modifiers], name);
 			else this[modifiers][name] = fn;
 			
-			delete cache[this.UID];
-			this.UID = UID++;
 			cache[this.UID] = {};
 			
 			return this
@@ -111,51 +134,50 @@ provides: [Template]
 		html: function (template, data) { return Elements.from(this.substitute(template, data)) },	
 		compile: function (template, options) {
 		
-			if(cache[this.UID][template]) return cache[this.UID][template];
 			if(options && options != this.options) this.setOptions(options);
+			if(cache[this.UID][template] && this.fn) return this.fn;
 			
-			return compile(template, Object[append]({}, this.options, {filters: this[filters], modifiers: this[modifiers]}), this.UID);
+			this.fn = compile(template, Object[append]({}, this.options, {filters: this[filters], modifiers: this[modifiers]}), this.UID);
+			return this.fn
 		},
 		substitute: function (template, data) {
 		
 			if(!cache[this.UID][template]) this.compile(template);
-			return cache[this.UID][template](data)
+			return this.fn(data)
 		}	
 	};
 
-	function escape(string, quote) {
+	function escapeHTML(string) {
 	
-		var escaped = ('' + string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-		
-		return quote ? escaped.replace(/"/g, '&quot;').replace(/'/g, '&apos;') : escaped
+		return ('' + string).replace(/[&<>'"]/g , function (c) { return esc[c] })
 	}
 	
 	function compile(template, options, UID) {
 
 		if(cache[UID][template]) return cache[UID][template];
 		
-		cache[UID][template] = parse(template, options, UID + '');
+		cache[UID][template] = parse(template, options, UID);
 		
 		return cache[UID][template]
 	}
 	
 	function parse(template, options, UID) {
 	
-		var state = {},
-			fn,
-			result = inline(template, options, UID, [], [], state);
+		var state = {}, fn, result = inline(template, options, UID, [], [], state);
 			
 		if(!state.iterable) {
 		
-			fn = new Function('data,options,evaluate,nestedeval,tmp,undef', 'return ' + result[join]('+')[replace](/html\+=/g, ''));
+			// log('Template: return ' + result[join]('+\n')[replace](/html\+=/g, ''))
+			fn = new Function('data,options,evaluate,nestedeval,tmp,undef', 'return data==undef?"": ' + result[join]('+')[replace](/html\+=/g, ''));
 			return function (data, html) { return html ? Elements.from(fn(data, options, evaluate, nestedeval)) : fn(data, options, evaluate, nestedeval) }
 		} 
 	
-		fn = new Function('data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,stack,buffer,filters,tmp,undef', ('var html = "";' + result[join](';') + ';return html')[replace]('html = "";html+="', 'html = "'));
+		//log(('var html = "";' + result[join](';') + ';return html')[replace]('html = "";html+="', 'html = "'));
+		fn = new Function('data,options,compile,test,evaluate,nestedeval,log,stack,buffer,filters,tmp,undef', ('var html = "";' + result[join](';') + ';return html')[replace]('html = "";html+="', 'html = "'));
 		
 		return function (data, html) {
 		
-			return html ? Elements.from(fn(data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,[],[],[])) : fn(data,options,compile,conditional,test,evaluate,nestedeval,iterate,log,[],[],[])
+			return html ? Elements.from(fn(data,options,compile,test,evaluate,nestedeval,log,[],[],[])) : fn(data,options,compile,test,evaluate,nestedeval,log,[],[],[])
 		}
 	}
 	
@@ -173,6 +195,7 @@ provides: [Template]
 			name,
 			_filters,
 			substr,
+			escape = options.escape,
 			original = template,
 			begin = options.begin || '{',
 			end = options.end || '}',
@@ -215,7 +238,7 @@ provides: [Template]
 					buffer[push]('html+=' + quote(string));
 					
 					if(_modifiers[name]) buffer[push]('html+=' + '((tmp=options.modifiers[' + match + '](data' + (_filters && _filters.length > 0 ? ',' + quote(_filters) : '') + '))||tmp!=undef?tmp:"")');
-					else buffer[push]('html+=' + (stack.length <= 1 ? 'evaluate' : 'nestedeval') + '(data,options,' + (stack.length <= 1 ? quote(stack) : '[' + quote(stack) + ']') + ')');
+					else buffer[push]('html+=' + (stack.length <= 1 ? 'evaluate' : 'nestedeval') + '(data,' + (stack.length <= 1 ? quote(stack) : '[' + quote(stack) + ']') + (escape ? ',true' : '') + ')');
 					
 					template = template[replace](string + oTag, '');
 					stack = stack.slice(0, level)
@@ -239,7 +262,7 @@ provides: [Template]
 						name = _filters[shift]();
 					}
 					
-					if(_filters.length > 0) _filters = _filters.filter(function (filter) { return filter !== '' })
+					if(_filters.length > 0) _filters = _filters.filter(function (filter) { return filter !== '' });
 					
 					match = quote(name);
 					
@@ -259,6 +282,8 @@ provides: [Template]
 					substr = template[substring](index + oTag.length, cTagIndex);
 					template = template[replace](template[substring](0, cTagIndex + cTag.length), '');
 					
+					var context = template[indexOf](begin) != -1;
+							
 					switch(tag) {
 					
 						case 'if':
@@ -270,11 +295,20 @@ provides: [Template]
 							name = name[split]('.');
 								
 							buffer[push]('stack.push(data)',
-										'data=' + (name.length <= 1 ? 'evaluate(data,options,' + quote(name) + ',true)' : 'nestedeval(data,options,[' + quote(name) + '],true)'),
+										'data=' + (name.length <= 1 ? 'evaluate(data,' + quote(name)  + (escape ? ',true' : ',false') + ',true)' : 'nestedeval(data,[' + quote(name) + ']' + (escape ? ',true' : ',false') + ',true)'),
 										'filters=[' + quote(_filters) + ']',
-										'html+=conditional([' + quote(substr[split](elseif)) + '],options,' + quote(UID) + ',test(' + quote(tag) + ',data),' + (tag == 'if' ? 'typeof data == "object"' : 'false') + ',data,stack[stack.length-1],filters)',
-										'data=stack.pop()'
+										'var templates=[' + quote(substr[split](elseif)) + '],t=test(' + quote(tag) + ',data),i,swap=' + (tag == 'if' ? 'typeof data == "object"' : 'false') + 
+										',context=stack[stack.length-1],value=templates.length==2?(t&&swap?data:context):(!t?undef:(swap?data:context))'
 									);
+									
+							if(_filters.length >= 1) buffer.push('for(i=0;i<filters.length;i++)value=options[' + quote(filters) + '][filters[i]](value)');
+										
+							buffer.push(
+										'if(templates.length==2) html+=compile(templates[!t?1:0],options,' + quote(UID) + ')(value);' +
+										'else if(t)html+=compile(templates[0],options,' + quote(UID) + ')(value)',
+										'if(' + (!!context) + ') data=stack.pop()'
+									);
+							
 							break;
 							
 						case 'loop':
@@ -283,7 +317,11 @@ provides: [Template]
 							if(tag == 'repeat') {
 								
 								name = name[split]('.');
-								buffer[push]('stack.push(data);data=' + (name.length <= 1 ? 'evaluate(data,options,' + quote(name) + ')' : 'nestedeval(data,options,[' + quote(name) + '])'));
+								
+								// save the context
+								if(context) buffer[push]('stack.push(data)');
+							
+								buffer[push]('data=' + (name.length <= 1 ? 'evaluate(data,' + quote(name) + (escape ? ',true' : '') + ')' : 'nestedeval(data,[' + quote(name) + ']' + (escape ? ',true' : '') + ')'));
 							}
 						
 							if(_filters.length > 0) buffer[push](
@@ -292,14 +330,21 @@ provides: [Template]
 								'for(tmp=0;tmp<filters.length;tmp++)if(options.filters[filters[tmp]]!=undef)data=options.filters[filters[tmp]](data)'
 							);
 							
-							buffer[push]('if(typeof data == "object") html+=iterate(' + quote(substr) + ',Object.keys(data),options,' + quote(UID) + ',data)');
-							if(tag == 'repeat') buffer[push]('data=stack.pop()');
+							buffer[push]('if(typeof data == "object") {' +
+
+								'var render = compile(' + quote(substr) + ',options, ' + quote(UID) + '),key',
+								'if(data instanceof Array) for(key = 0; key < data.length; key++) html+=render(evaluate(data,key' + (escape ? ',true' : '') + '))',
+								'else for(key in data) if(data.hasOwnProperty(key)) html+=render(evaluate(data,key' + (escape ? ',true' : '') + '))' +
+	
+							'}');
+							
+							if(tag == 'repeat') buffer[push]('if(' + (!!context) + ') data=stack.pop()');
 							break;
 							
 						default:
 						
 							buffer[push]('tmp=options.parse!=undef?options.parse(' + quote(tag, name, substr) + ',data,options,filters) : ' + quote(substr),
-										'if(options.parse == undef) log("unknown tag: ",' + quote(tag, name, substr, original) + ')',
+										'if(options.parse==undef) log("unknown tag: ",' + quote(tag, name, substr, original) + ')',
 										'html+=tmp==undef?"":tmp'
 									);
 							break;
@@ -312,32 +357,10 @@ provides: [Template]
 		
 		if(template !== '') buffer[push]('html+=' + quote(template));
 		
-		return buffer.filter(function (string) { return string !== '' && string != '""' });
-	}
-			
-	function conditional(templates, options, UID, test, swap, data, context, _filters) {
-	
-		var value = templates.length == 2 ? (test && swap ? data : context) : (!test ? undef : (swap ? data : context));
-		
-		if(_filters && value != undef) for(var i = 0; i < _filters.length; i++) value = options[filters][_filters[i]](value);
-		
-		if(templates.length == 2) return compile(templates[!test ? 1 : 0], options, UID)(value);
-		
-		if(!test) return '';
-	
-		return compile(templates[0], options, UID)(value)
+		return buffer.filter(function (string) { return string !== '' && string != '""' && string != 'html+=""' });
 	}
 	
-	function iterate(template, keys, options, UID, data) {
-	
-		var render = compile(template, options, UID),key,html='';
-		
-		for(key = 0; key < keys.length; key++) html += render(evaluate(data,options,keys[key]));
-			
-		return html
-	}
-	
-	function evaluate (object, options, property, raw) {
+	function evaluate (object, property, escape, raw) {
  
 		var value;
 
@@ -345,11 +368,12 @@ provides: [Template]
 		else value = typeof object[property] == 'function' ? object[property]() : object[property];
 		
 		if(raw) return value;
-		if(value != undef) return options.escape ? escape(value, options.quote) : value;
-		return ''
+		if(value != undef) return escape ? escapeHTML(value) : value;
+		
+		return raw ? object : ''
 	}
 	
-	function nestedeval (object, options, paths, raw) {
+	function nestedeval (object, paths, escape, raw) {
 	
 		var value = object, key, i;
 		
@@ -361,10 +385,11 @@ provides: [Template]
 			
 			value = typeof value[key] == 'function' ? value[key]() : value[key]
 		}
-		
+			
 		if(raw) return value;
-		if(value != undef) return options.escape ? escape(value, options.quote) : value;
-		return ''
+		if(value != undef) return escape ? escapeHTML(value) : value;
+		
+		return raw ? object : ''
 	}
 		
 	function test (tag, value) {

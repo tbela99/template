@@ -1,287 +1,391 @@
- /*
- 
-	comparing two implementations
- */
- /*
+/*
 ---
 script: template.js
 license: MIT-style license.
-description: Template - Context aware template engine with conditional replacement, iterations and filters.
+description: Template - context aware template engine with conditional replacement, iterations and filters.
 copyright: Copyright (c) 2011 Thierry Bela
 authors: [Thierry Bela]
 
 requires: 
   core:1.3: 
-  - Class
+  - Object
+  - Array
   - Elements.from
   
 provides: [Template]
 ...
 */
 
-!function (context, undef) {
+!function (window, undef) {
 
 "use strict";
 
-	function has(object, property) { return Object.prototype.hasOwnProperty.call(object, property) }
-	function log() { if(context.console && context.console.log) context.console.log.apply(context.console, arguments) }
-				
-	context.Template2 = new Class({
-
-		options: {
+	var log = (function () { return window.console && console.log ? function () { console.log.apply(console, arguments) } : function () { } })(),
+		cache = {}, 
+		Object = window.Object,
+		append = 'append',
+		filters = 'filters',
+		indexOf = 'indexOf',
+		join = 'join',
+		modifiers = 'modifiers',
+		push = 'push',
+		replace = 'replace',
+		shift = 'shift',
+		split = 'split',
+		substring = 'substring',
+		Template = window.Template2 = function (options) { 
 		
-			debug: true,
-			//handle unknown tag
-			parse: function (tag, name, substring, partial/* , filters, string, data, options */) {
-			
-				/* if(options.debug)  */log('unknown template tag: ' + tag, name, partial);
-				
-				return substring
-			},
+			this.initialize(options); 
+			return this
+		},
+		UID = 0,
+		esc = {
+		
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&apos;'
+		};
+		
+	Template.prototype = {
+
+	/*
+		options: {
+
 			begin: '{',
-			end: '}'
-		},		
+			end: '}',
+			debug: false,
+			// parse: function () {},
+			escape: false, // escape strings by default
+			quote: false // escape quotes
+		},
+	*/
 		filters: {},
-		modifiers: {},		
+		modifiers: {
+
+			/* explicitely escape string */
+			escape: function (context, property, quote) {
+
+				var options = {escape: true, quote: quote};
+				return property.indexOf('.') == -1 ? evaluate(context, options, property) : nestedeval(context, options, property.split('.'))
+			},
+			/* do not escape string */
+			raw: function (context, property) {
+
+				var options = {};
+				return property.indexOf('.') == -1 ? evaluate(context, options, property) : nestedeval(context, options, property.split('.'))
+			}
+		},		
+		UID: 0,
 		initialize: function (options) { 
 		
-			Object.append(this.options, options) 
+			this.options = Object[append]({}, options);
+			this.UID = UID++;
+			cache[this.UID] = {}
 		},		
-		addFilters: function (name, fn) {
+		setOptions: function (options) {
 		
-			if(typeof name == 'object') Object.each(name, function (value, name) { this.filters[name] = value }, this);
+			if(options) Object[append](this.options, options);
 			
-			else this.filters[name] = fn;
+			delete cache[this.UID];
+			this.UID = UID++;
+			cache[this.UID] = {};
+			
+			return this
+		},
+		addFilter: function (name, fn) {
+		
+			if(typeof name == 'object') Object[append](this[filters], name);
+			else this[filters][name] = fn;
+			
+			delete cache[this.UID];
+			this.UID = UID++;
+			cache[this.UID] = {};
 			
 			return this
 		},		
 		addModifier: function (name, fn) {
 		
-			if(typeof name == 'object') Object.each(name, function (value, name) { this.modifiers[name] = value }, this);
+			if(typeof name == 'object') Object[append](this[modifiers], name);
+			else this[modifiers][name] = fn;
 			
-			else this.modifiers[name] = fn;
+			delete cache[this.UID];
+			this.UID = UID++;
+			cache[this.UID] = {};
 			
 			return this
 		},		
-		html: function () { return Elements.from(this.substitute.apply(this, arguments)) },		
-		substitute: function (string, data, options) {
+		html: function (template, data) { return Elements.from(this.substitute(template, data)) },	
+		compile: function (template, options) {
 		
-			options = Object.append({}, this.options, options);
+			if(cache[this.UID][template]) return cache[this.UID][template];
+			if(options && options != this.options) this.setOptions(options);
 			
-			var replace = {begin: options.begin.escapeRegExp(), end: options.end.escapeRegExp()},
-				match = new RegExp(('{begin}([a-z0-9][a-z0-9-_]*):([a-z0-9_\\.-]*)([^' + (['[', ']'].indexOf(options.end) != -1 ? replace.end : replace.end.replace(/\\/g, '')) + ']+)?{end}').substitute(replace), 'i'),
-				simplereg = new RegExp(('\\\\?{begin}([^' + (['[', ']'].indexOf(options.begin) != -1 ? replace.begin : replace.begin.replace(/\\/g, '')) + ']+){end}').substitute(replace), 'g');
-			
-			return this.parse(string, replace, match, simplereg, data, options)
-		},		
-		parse: function (string, replace, match, simplereg, data, options) {
+			return compile(template, Object[append]({}, this.options, {filters: this[filters], modifiers: this[modifiers]}), this.UID);
+		},
+		substitute: function (template, data) {
 		
-			var matches;
+			if(!cache[this.UID][template]) this.compile(template);
+			return cache[this.UID][template](data)
+		}	
+	};
+
+	function escape(string, quote) {
+	
+		return ('' + string).replace(quote ? /[&<>'"]/g : /[&<>]/g , function (c) { return esc[c] })
+	}
+	
+	function compile(template, options, UID) {
+
+		if(cache[UID][template]) return cache[UID][template];
+		
+		cache[UID][template] = parse(template, options, UID + '');
+		
+		return cache[UID][template]
+	}
+	
+	function parse(template, options, UID) {
+	
+		var state = {}, fn, result = inline(template, options, UID, [], [], state);
+			
+		if(!state.iterable) {
+		
+			fn = new Function('data,options,evaluate,nestedeval,tmp,undef', 'return ' + result[join]('+')[replace](/html\+=/g, ''));
+			return function (data, html) { return html ? Elements.from(fn(data, options, evaluate, nestedeval)) : fn(data, options, evaluate, nestedeval) }
+		} 
+	
+		fn = new Function('data,options,compile,test,evaluate,nestedeval,log,stack,buffer,filters,tmp,undef', ('var html = "";' + result[join](';') + ';return html')[replace]('html = "";html+="', 'html = "'));
+		
+		return function (data, html) {
+		
+			return html ? Elements.from(fn(data,options,compile,test,evaluate,nestedeval,log,[],[],[])) : fn(data,options,compile,test,evaluate,nestedeval,log,[],[],[])
+		}
+	}
+	
+	function inline(template, options, UID, stack, buffer, state) {
+	
+		var level = stack.length,
+			index,
+			cIndex,
+			cTagIndex,
+			string = '',
+			match,
+			oTag,
+			cTag,
+			tag,
+			name,
+			_filters,
+			substr,
+			original = template,
+			begin = options.begin || '{',
+			end = options.end || '}',
+			length = begin.length,
+			_modifiers = options[modifiers] || {};
+		
+		do {
+		
+			_filters = [];
+			index = template[indexOf](begin);
+			cIndex = template[indexOf](end, index);
+			
+			if(index != -1 && cIndex != -1) {
+			
+				if(template.charAt(index - 1) == '\\') {
 				
-			if(data != undef) {
-				
-				do {
+					string = template[substring](0, cIndex + length);
 					
-					matches = match.exec(string);
-
-					if(matches) {
+					buffer[push]('html+=' + quote(template[substring](0, index - 1) + template[substring](index, cIndex + length)));
+					template = template[replace](string, '');
+					continue;
+				}
+				
+				oTag = template[substring](index, cIndex + length);
+				string = template[substring](0, index);
+				match = template[substring](index + length, cIndex);
+				
+				if(match[indexOf](':') == -1) {
+				
+					name = match;
+					if(match[indexOf](' ') != -1) {
 						
-						var open,
-							close,
-							index, //index of the first match
-							index2,//index of the last match
-							index3,//index of the {else: ...} match
-							test,
-							context, 
-							elseif,
-							html, 
-							subject,
-							partial,
-							substring,
-							values,
-							i,
-							tag = matches[1],
-							name = matches[2],
-							filters = matches[3] != undef ? matches[3] : '';
+						_filters = match[split](' ');
+						name = _filters[shift]();
+					}
+					
+					match = quote(name);
+					stack[append](name == '.' || name[indexOf]('.') == -1 ? [name] : name[split]('.'));
+					
+					buffer[push]('html+=' + quote(string));
+					
+					if(_modifiers[name]) buffer[push]('html+=' + '((tmp=options.modifiers[' + match + '](data' + (_filters && _filters.length > 0 ? ',' + quote(_filters) : '') + '))||tmp!=undef?tmp:"")');
+					else buffer[push]('html+=' + (stack.length <= 1 ? 'evaluate' : 'nestedeval') + '(data,options,' + (stack.length <= 1 ? quote(stack) : '[' + quote(stack) + ']') + ')');
+					
+					template = template[replace](string + oTag, '');
+					stack = stack.slice(0, level)
+				}
+				
+				else {
+				
+					buffer[push]('html+=' + quote(string));
+					
+					_filters = match[split](':');
+					tag = _filters[shift]();
+
+					if(_filters[0].charAt(0) == ' ') {
+					
+						name = '';
+						_filters = _filters[join](' ')[split](' ');
+					} 
+					else {
+					
+						_filters = _filters[join](' ')[split](' ');
+						name = _filters[shift]();
+					}
+					
+					if(_filters.length > 0) _filters = _filters.filter(function (filter) { return filter !== '' });
+					
+					match = quote(name);
+					
+					cTag = begin + '/' + tag + ':' + name + end;
+					
+					cTagIndex = template[indexOf](cTag);
+					
+					if(cTagIndex == -1) {
+					
+						// log or throw an error ?
+						log('token ' + oTag  + ' is not closed properly: "' + template[substring](0, cIndex + 1) + '"\n' + original);
+						template = template[replace](oTag, '');
+						continue;
+					}
+			
+					state.iterable = true;
+					substr = template[substring](index + oTag.length, cTagIndex);
+					template = template[replace](template[substring](0, cTagIndex + cTag.length), '');
+					
+					switch(tag) {
+					
+						case 'if':
+						case 'defined':
+						case 'empty':
+						case 'not-empty':
+
+							var elseif = begin + 'else:' + name + end;
+							name = name[split]('.');
+								
+							buffer[push]('stack.push(data)',
+										'data=' + (name.length <= 1 ? 'evaluate(data,options,' + quote(name) + ',true)' : 'nestedeval(data,options,[' + quote(name) + '],true)'),
+										'filters=[' + quote(_filters) + ']',
+										'var templates=[' + quote(substr[split](elseif)) + '],t=test(' + quote(tag) + ',data),i,swap=' + (tag == 'if' ? 'typeof data == "object"' : 'false') + 
+										',context=stack[stack.length-1],value=templates.length==2?(t&&swap?data:context):(!t?undef:(swap?data:context));' +
+										'if(filters!=false&&value!=undef)for(i=0;i<filters.length;i++)value=options[' + quote(filters) + '][filters[i]](value);' +
+										'if(templates.length==2) html+=compile(templates[!t?1:0],options,' + quote(UID) + ')(value);' +
+										'else if(t)html+=compile(templates[0],options,' + quote(UID) + ')(value)',
+										'data=stack.pop()'
+									);
+									
+							break;
 							
-						open = options.begin + tag + ':' + name + filters + options.end;
-						close = options.begin + '/' + tag + ':' + name + options.end;
-						filters = filters == '' ? [] : filters.split(/\s+/g).filter(function (filter) { 
+						case 'loop':
+						case 'repeat':
 						
-							var value = has(this.filters, filter);
+							if(tag == 'repeat') {
+								
+								name = name[split]('.');
+								buffer[push]('stack.push(data);data=' + (name.length <= 1 ? 'evaluate(data,options,' + quote(name) + ')' : 'nestedeval(data,options,[' + quote(name) + '])'));
+							}
+						
+							if(_filters.length > 0) buffer[push](
 							
-							if(options.debug && filter != '' && !value) log('invalid template filter: ' + filter);
+								'filters=[' + quote(_filters) + ']', 
+								'for(tmp=0;tmp<filters.length;tmp++)if(options.filters[filters[tmp]]!=undef)data=options.filters[filters[tmp]](data)'
+							);
 							
-							return value
-						}, this).map(function (value) {
-						
-							return this.filters[value]
-						}, this);
-						
-						index2 = string.indexOf(close);
-						
-						if(index2 == -1) {
-						
-							if(options.debug && name.indexOf(':') != -1) log('suspicious template token found: "' + open + '", is the closing token missing ?', string);
-							string = string.replace(open, '');
-							continue;
-						}
-						
-						index = string.indexOf(open);
-						
-						substring = string.substring(index + open.length, index2);
-						partial = open + substring + close;
-						
-						switch(tag) {
+							buffer[push]('if(typeof data == "object") {' +
 
-							case 'if':
-							case 'defined':
-							case 'empty':
-							case 'not-empty':
-
-									//switch context for object or array
-									subject = this.evaluate(data, name);
-									
-									//apply filters
-									for(i = 0; i < filters.length; i++) subject = filters[i](subject)
-									
-									test = this.test(tag, subject);
-									
-									context = test && tag == 'if' && typeof subject == 'object';
-									elseif = options.begin + 'else:' + name + options.end;
-									
-									//if-else or something like that
-									index3 = string.indexOf(elseif);
-									
-									if(index3 != -1) {
-
-										if(!test) string = string.replace(partial, this.parse(string.substring(index3 + elseif.length, index2), replace, match, simplereg, data, options));
-
-										else if(context) string = string.replace(partial, this.parse(string.substring(index3 + elseif.length, index2), replace, match, simplereg, subject, options));
-										else string = string.replace(partial, this.parse(string.substring(index + open.length, index3), replace, match, simplereg, data, options));
-									}
-									
-									else {
-									
-										if(!test) string = string.replace(partial, '');
-
-										else if(context) string = string.replace(partial, this.parse(substring, replace, match, simplereg, subject, options));
-										else string = this.parse(string.replace(partial, this.parse(substring, data, options)), replace, match, simplereg, data, options);
-									}
-									
-								break;
-								
-							case 'repeat':
-							case 'loop':
-								
-								html = '';
-								values = {};
-								subject = tag == 'loop' ? (typeof data == 'function' ? data() : data) : this.evaluate(data, name);
-								
-								if(!this.test(tag, subject)) string = string.replace(partial, '');
-								
-								else {
-									
-									var value, property, single = new RegExp(options.begin.escapeRegExp() + '\.' + options.end.escapeRegExp(), 'g');
-									
-									//iterable - Array or Hash like
-									if(typeof subject.each == 'function')  subject.each(function (value, key) {
-									
-										if(typeof value == 'function') value = value();
-										
-										if(value == undef) return;
-										
-										values[key] = value;
-									}, this);
-									
-									else for(property in subject) if(has(subject, property)) {
-									
-										value = this.evaluate(subject, property);
-										
-										if(value == undef) continue;
-										
-										values[property] = value;
-									}
-									
-									//apply filters
-									for(i = 0; i < filters.length; i++) values = filters[i](values);
-									
-									Object.each(values, function (value) { html += typeof value != 'object' ? substring.replace(single, value) : this.parse(substring, replace, match, simplereg, value, options) }, this);
-									string = string.replace(partial, html)
-								}
-								
-								break;
-
-							default: 
+								'var render = compile(' + quote(substr) + ',options, ' + quote(UID) + '),tmpl="",key;' +
+								'for(key in data) if(data.hasOwnProperty(key)) html+=render(evaluate(data,options,key))' +
+	
+							'}');
 							
-								var tmp = options.parse(tag, name, substring, partial, filters, string, data, options);
-								
-								string = string.replace(partial, tmp == undef ? '' : tmp);
-								break;
-						}
+							if(tag == 'repeat') buffer[push]('data=stack.pop()');
+							break;
+							
+						default:
+						
+							buffer[push]('tmp=options.parse!=undef?options.parse(' + quote(tag, name, substr) + ',data,options,filters) : ' + quote(substr),
+										'if(options.parse==undef) log("unknown tag: ",' + quote(tag, name, substr, original) + ')',
+										'html+=tmp==undef?"":tmp'
+									);
+							break;
 					}
 				}
-				
-				while(matches)
 			}
-			
-			return string.replace(simplereg, function(match, name) {
-			
-				if (match.charAt(0) == '\\') return match.slice(1);
-				
-				if(options.debug && name.indexOf(':') != -1) log('suspicious token found: "' + match + '", is the opening token missing ?', string);
-				
-				var value = this.evaluate(data, name);
-				
-				return value == undef ? '' : value
-				
-			}.bind(this))
-		},	
-		test: function (tag, value) {
-
-			switch(tag) {
-			
-				case 'if':
-				case 'not-empty':
-						return !!value;
-						
-				case 'defined':
-						return value != undef;
-				case 'empty':
-						return !value;
-						
-				case 'loop':
-				case 'repeat':
-						return value != undef && ['object', 'function'].indexOf(typeof value)  != -1;
-			}
-			
-			return true
-		},		
-		evaluate: function (object, property) {
-		
-			if(object == undef) return undef;
-			
-			if(this.modifiers[property] != undef) return this.modifiers[property](object, property);
-			
-			if(property.indexOf('.') != -1) {
-			
-				var value = typeof object == 'function' ? object() : object, paths = property.split('.'), key, i;
-				
-				for(i = 0; i < paths.length; i++) {
-				
-					key = paths[i];
-					
-					if(value[key] == undef) return undef;
-					
-					value = typeof value[key] == 'function' ? value[key]() : value[key]
-				}
-				
-				return value
-			}
-			
-			return typeof object[property] == 'function' ? object[property]() : object[property]
 		}
-	})
+		
+		while(index != -1 && cIndex != -1);
+		
+		if(template !== '') buffer[push]('html+=' + quote(template));
+		
+		return buffer.filter(function (string) { return string !== '' && string != '""' });
+	}
+	
+	function evaluate (object, options, property, raw) {
+ 
+		var value;
 
-}(this);
+		if(property == '.' || property === '') value = object;
+		else value = typeof object[property] == 'function' ? object[property]() : object[property];
+		
+		if(raw) return value;
+		if(value != undef) return options.escape ? escape(value, options.quote) : value;
+		return ''
+	}
+	
+	function nestedeval (object, options, paths, raw) {
+	
+		var value = object, key, i;
+		
+		for(i = 0; i < paths.length; i++) {
+		
+			key = paths[i];
+			
+			if(value[key] == undef) return raw ? undef : '';
+			
+			value = typeof value[key] == 'function' ? value[key]() : value[key]
+		}
+		
+		if(raw) return value;
+		if(value != undef) return options.escape ? escape(value, options.quote) : value;
+		return ''
+	}
+		
+	function test (tag, value) {
 
+		switch(tag) {
+		
+			case 'if':
+			case 'not-empty':
+					return value != false && value != undef;
+					
+			case 'defined':
+					return value != undef;
+			case 'empty':
+					return value == false || value == undef;
+					
+			case 'loop':
+			case 'repeat':
+					return typeof value == 'object';
+		}
+		
+		return true
+	}
+	
+	function quote() { 
+	
+		return Array.flatten(arguments).map(function (string) { 
+			return '"' + ('' + string)[replace](/(["\\])/g, '\\$1')[replace](/\n/g, '\\n') + '"' 
+		})
+	}
+	
+}(this, null);

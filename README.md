@@ -4,7 +4,6 @@ Template
 Template is fast and context aware template engine with conditional replacement, iterations and filters.
 - Compare to Mustache.js and Hogan.js [here](http://jsperf.com/template-mustachejs-hogan) and [here](http://jsperf.com/template-mustachejs-hogan/2)
 - Compare to Mustache.js, Hogan.js and Underscore [here](http://jsperf.com/template-mustachejs-hogan/4)
-
 - [Demo](http://jsfiddle.net/tbela99/ygWKc/1/)
 
 How to use
@@ -118,8 +117,7 @@ Escape HTML special chars whether escape string is enabled by default or not.
 
 Syntax: 
 
-	var tmpl = "my name is {escape name}", // escape &, < and >
-		tmpl2 = "my name is {escape name true}" // escape &, <, >, " and '
+	var tmpl = "my name is {escape name}", // escape &, < and >, " and '
 
 ### Modifier raw
 
@@ -127,11 +125,10 @@ Return string as is whether escape string is enabled by default of not.
 
 Syntax: 
 
-	var tmpl = "my name is {escape name}", // escape &, < and >
-		tmpl2 = "my name is {escape name true}" // escape &, <, >, " and '
+	var tmpl = "my name is {raw name}" // does not escape &, <, >, " and '
 
 
-### Example
+### More example
 	
 	var data = {list: [1, 2, 3, 4]},
 		template = new Template();
@@ -303,9 +300,7 @@ Syntax: {loop:} match1{/loop:}
 
 * begin - (*string*, optional) opening token delimiter, default to *{*.
 * end - (*string*, optional) closing token delimiter, default to *}*.
-* debug - (*boolean*, optional) log messages in the console if there are token with no match.
-* escape - (*boolean*, optional) escape string by default, by default single and double quotes are not escaped
-* quote - (*boolean*, optional) if escape is true then escape single and double quotes
+* escape - (*boolean*, optional) escape every string by default
 * parse - (*function*, optional) function called when an unknown tag is found. you can use this to handle your custom tag
 
 ##### Options:parse Arguments
@@ -352,7 +347,8 @@ the function return a string. the function accept a second optional parameter. i
 	string = render(data);
 	
 	// render as an array of HTML elements
-	document.body.adopt(render(data, true));
+	nodes = render(data, true);
+	document.body.adopt(nodes);
 
 ### Returns:
 

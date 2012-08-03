@@ -7,7 +7,7 @@
 (function(window, document) {
 
   /** Java applet archive path */
-  var archive = '../../nano.jar';
+  //var archive = '../../benchmark.js/nano.jar';
 
   /** Cache of error messages */
   var errors = [];
@@ -703,8 +703,8 @@
       addClass('java', classNames.show);
     } else {
       // using innerHTML avoids an alert in some versions of IE6
-      document.body.insertBefore(setHTML(createElement('div'),
-        '<applet code=nano archive=' + archive + '>').lastChild, document.body.firstChild);
+      // document.body.insertBefore(setHTML(createElement('div'),
+        // '<applet code=nano archive=' + archive + '>').lastChild, document.body.firstChild);
     }
   }
   else {

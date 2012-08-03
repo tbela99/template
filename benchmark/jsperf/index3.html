@@ -32,9 +32,13 @@
     <h2>Preparation code</h2>
     <pre><code>
   var template = new Template();
-  var tmpl = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: &lt;ul&gt;{loop:}&lt;li&gt;{.}&lt;/li&gt;{/loop:}&lt;/ul&gt;.{/if:kids}&lt;br/&gt;';
+  var template2 = new Template2();
   
-  var data = {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']};
+  var data = {mustache: [1, 2, 3, 4]},
+  tmpl = '{repeat:mustache} {name}{.}{/repeat:mustache}',
+  render = template.compile(tmpl),
+  render2 = template2.compile(tmpl);
+  
   </code></pre>
   </section>
 
@@ -77,17 +81,33 @@
         <th scope="row" id="title-1"><div>Old implementation</div></th>
         <td>
         <pre><code>
-		template.substitute2(tmpl, data)</code></pre>
+		template2.substitute(tmpl, data)</code></pre>
         </td>
         <td id="results-1" class="results"></td>
       </tr>
       <tr>
-        <th scope="row" id="title-2"><div>New implementation</div></th>
+        <th scope="row" id="title-2"><div>Old compiled</div></th>
+        <td>
+        <pre><code>
+		render2(data)</code></pre>
+        </td>
+        <td id="results-2" class="results"></td>
+      </tr>
+      <tr>
+        <th scope="row" id="title-3"><div>New implementation</div></th>
         <td>
         <pre><code>
 		template.substitute(tmpl, data)</code></pre>
         </td>
-        <td id="results-2" class="results"></td>
+        <td id="results-3" class="results"></td>
+      </tr>
+      <tr>
+        <th scope="row" id="title-4"><div>New compiled</div></th>
+        <td>
+        <pre><code>
+		render(data)</code></pre>
+        </td>
+        <td id="results-4" class="results"></td>
       </tr>
       </tbody>
     </table>
@@ -153,6 +173,7 @@
 <script src="../../benchmark.js/benchmark.js"></script>
 <script src="ui.js"></script>
 <script src="../../benchmark.js/plugin/ui.browserscope.js"></script>
+
 <script src="../../mootools.js"></script>
 <script src="../../Source/Template.js"></script>
 <script src="template.js"></script>
@@ -161,18 +182,27 @@
   ui.browserscope.selector = '#bs-results';
 
   var template = new Template();
-  var tmpl = ' Hi, my name is {name}.{if:kids} I have {length} lovely kids: <ul>{loop:}<li>{.}</li>{/loop:}</ul>.{/if:kids}<br/>';
+  var template2 = new Template2();
   
-  var data = {name: 'Emily', kids: ['Brian', 'Edith', 'Spider man']};
+  var data = {mustache: [1, 2, 3, 4]},
+  tmpl = '{repeat:mustache} {name}{.}{/repeat:mustache}',
+  render = template.compile(tmpl),
+  render2 = template2.compile(tmpl);
   
   //console.log(template.substitute(tmpl, data) == template.substitute(tmpl, data)) -> true
   
-  ui.add('Current implementation (with filters)', function() {
+  ui.add('Old implementation', function() {
+  
+		template2.substitute(tmpl, data)
+  }).add('Old compiled', function() {
+  
+		render2(data)
+  }).add('Current implementation', function() {
   
 		template.substitute(tmpl, data)
-  }).add('Old implementation', function() {
+  }).add('Current compiled', function() {
   
-		template.substitute2(tmpl, data)
+		render(data)
   })
   /* 
   .add('Error', function() {
