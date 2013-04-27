@@ -164,7 +164,7 @@ Passing parameters to a modifier function
 					case 'lowercase': return context[property].toLowerCase(); 
 				}
 				
-				return data[property]
+				return context[property]
 			}
 		});
 		
@@ -340,7 +340,7 @@ the function return a string. the function accept a second optional parameter. i
 
 ### Syntax:
 
-	var render = new Template().compile(string[, html]);
+	var render = new Template().compile(string[, options]);
 	
 	// render as string
 	string = render(data);
